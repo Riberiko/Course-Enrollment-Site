@@ -3,7 +3,6 @@ const express = require('express');
 
 const app = express();
 const cors = require('cors');
-const port = 8080; // Choose any available port
 const sqlite3 = require('sqlite3');
 const sqlite = require('sqlite');
 const multer = require('multer');
@@ -38,6 +37,31 @@ app.get('/', (req, res) => {
   res.send('Hello from the backend!');
 });
 
+//Retrieve course list (all courses ever)
+app.get('/GetEntireCourseList', async function(req, res) {
+  try {
+    let db = await getDBConnection();
+    let courses = await db.all('SELECT * FROM course ORDER BY start_time;');
+    await db.close();
+    res.json(courses);
+  } catch (err) {
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
+});
+//Retrieve course list (currently active courses)
+app.get('/GetActiveCourseList', async function(req, res) {
+  try {
+    let db = await getDBConnection();
+    let courses = await db.all('SELECT * FROM active_courses JOIN course WHERE course.id = active_courses.course_id;');
+    await db.close();
+    res.json(courses);
+  } catch (err) {
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
+});
+
 //check if the username and password are valid
 app.get('/checkUserCreds', async function(req, res) {
 
@@ -49,13 +73,12 @@ app.get('/checkUserCreds', async function(req, res) {
   }
   else {
     try {
-
       let connection = await getDBConnection();
       //check the teacher_user table
-      let query = "SELECT id FROM teacher_users WHERE teacher_id = ? AND password = ?";
+      let query = "SELECT teacher_id FROM teacher_users WHERE teacher_id = ? AND password = ?";
       let result = await connection.all(query, [userid, password]);
       //check the student_users table
-      query = "SELECT id FROM student_users WHERE student_id = ? AND password = ?";
+      query = "SELECT student_id FROM student_users WHERE student_id = ? AND password = ?";
       result.push(await connection.all(query, [userid,password]));
       if (result.length == 0) {
         res.status(USER_ERROR).send(USER_ERROR_NO_USER_MSG);
@@ -63,31 +86,16 @@ app.get('/checkUserCreds', async function(req, res) {
       else {
         let userFound = {"validCredentials" : "True"};
         res.status(USER_ERROR).json(userFound);
-
+        await connection.close();
       }
     } catch (err) {
-
-      res.status(500).send("someting didn't go correctly");
+      res.status(SERVER_ERROR).send(SERVER_ERROR_MSG);
     }
-    await connection.close();
   }
 });
 
-//Retrieve course list
-app.get('/GetCourseList', async function(req, res) {
-  try {
-    let db = await getDBConnection();
-    let courses = await db.all('SELECT * FROM course ORDER BY start_time;');
-    await db.close();
-    res.json(courses);
-  } catch (err) {
-    res.type('text');
-    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
-  }
-});
-
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`Server is running at http://localhost:${PORT}`);
 });
 
 app.post('/login', async (req, res) => {
