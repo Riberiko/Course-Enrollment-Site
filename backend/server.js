@@ -37,18 +37,16 @@ app.post('/login', async (req, res) => {
     return res.status(400).send('either missing type argument or type is not equal to teacher_users or student_users')
   }
 
-  console.log('start')
 
   const db = await getDBConnection(), lookfor = type.substring(0, type.indexOf('_')+1)+'id'
   let query = `SELECT ${lookfor} FROM ${type} WHERE ${lookfor} = ? AND password = ?;`
 
   let result = await db.all(query, [username, password])
 
-  console.log('start1')
   if (result.length) {
     let id = await getSessionId(type)
     let q = `UPDATE ${type} SET session_id = ? WHERE ${lookfor} = ?;`
-    await db.exec(q, [id, username])
+    await db.run(q, [id, username])
     res.cookie('sessionid', id, { expires: new Date(Date.now() + 60 * 1000) })
     res.send('Login Successful')
   } else {
