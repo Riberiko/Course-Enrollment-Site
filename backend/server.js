@@ -37,6 +37,31 @@ app.get('/', (req, res) => {
   res.send('Hello from the backend!');
 });
 
+//Retrieve course list (all courses ever)
+app.get('/GetEntireCourseList', async function(req, res) {
+  try {
+    let db = await getDBConnection();
+    let courses = await db.all('SELECT * FROM course ORDER BY start_time;');
+    await db.close();
+    res.json(courses);
+  } catch (err) {
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
+});
+//Retrieve course list (currently active courses)
+app.get('/GetActiveCourseList', async function(req, res) {
+  try {
+    let db = await getDBConnection();
+    let courses = await db.all('SELECT * FROM active_courses JOIN course WHERE course.id = active_courses.course_id;');
+    await db.close();
+    res.json(courses);
+  } catch (err) {
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
+});
+
 //check if the username and password are valid
 app.get('/checkUserCreds', async function(req, res) {
 
@@ -66,19 +91,6 @@ app.get('/checkUserCreds', async function(req, res) {
     } catch (err) {
       res.status(SERVER_ERROR).send(SERVER_ERROR_MSG);
     }
-  }
-});
-
-//Retrieve course list
-app.get('/GetCourseList', async function(req, res) {
-  try {
-    let db = await getDBConnection();
-    let courses = await db.all('SELECT * FROM course ORDER BY start_time;');
-    await db.close();
-    res.json(courses);
-  } catch (err) {
-    res.type('text');
-    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
 });
 
