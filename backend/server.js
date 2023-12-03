@@ -37,6 +37,31 @@ app.get('/', (req, res) => {
   res.send('Hello from the backend!');
 });
 
+//Retrieve course list (all courses ever)
+app.get('/GetEntireCourseList', async function(req, res) {
+  try {
+    let db = await getDBConnection();
+    let courses = await db.all('SELECT * FROM course ORDER BY start_time;');
+    await db.close();
+    res.json(courses);
+  } catch (err) {
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
+});
+//Retrieve course list (currently active courses)
+app.get('/GetActiveCourseList', async function(req, res) {
+  try {
+    let db = await getDBConnection();
+    let courses = await db.all('SELECT * FROM active_courses JOIN course WHERE course.id = active_courses.course_id;');
+    await db.close();
+    res.json(courses);
+  } catch (err) {
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
+});
+
 //check if the username and password are valid
 app.get('/checkUserCreds', async function(req, res) {
 
@@ -69,19 +94,6 @@ app.get('/checkUserCreds', async function(req, res) {
   }
 });
 
-//Retrieve course list
-app.get('/GetCourseList', async function(req, res) {
-  try {
-    let db = await getDBConnection();
-    let courses = await db.all('SELECT * FROM course ORDER BY start_time;');
-    await db.close();
-    res.json(courses);
-  } catch (err) {
-    res.type('text');
-    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
-  }
-});
-
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
@@ -100,15 +112,16 @@ app.post('/login', async (req, res) => {
     return res.status(400).send('either missing type argument or type is not equal to teacher_users or student_users')
   }
 
+
   const db = await getDBConnection(), lookfor = type.substring(0, type.indexOf('_')+1)+'id'
-  let query = `SELECT ${lookfor} FROM ${type} WHERE username = ? AND password = ?;`
+  let query = `SELECT ${lookfor} FROM ${type} WHERE ${lookfor} = ? AND password = ?;`
 
   let result = await db.all(query, [username, password])
 
   if (result.length) {
-    let id = await getSessionId()
-    let q = `UPDATE ${type} SET sessionid = ? WHERE ${lookfor} = ?;`
-    await db.exec(q, [id, username])
+    let id = await getSessionId(type)
+    let q = `UPDATE ${type} SET session_id = ? WHERE ${lookfor} = ?;`
+    await db.run(q, [id, username])
     res.cookie('sessionid', id, { expires: new Date(Date.now() + 60 * 1000) })
     res.send('Login Successful')
   } else {
@@ -136,8 +149,8 @@ async function getDBConnection() {
  * Generates an unused sessionid and returns it to the user.
  * @returns {string} - The random session id.
  */
-async function getSessionId() {
-  let query = 'SELECT sessionid FROM users WHERE sessionid = ?';
+async function getSessionId(type) {
+  let query = `SELECT session_id FROM ${type} WHERE session_id = ?;`
   let id;
   let db = await getDBConnection();
   do {
