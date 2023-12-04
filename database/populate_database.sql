@@ -107,3 +107,20 @@ INSERT INTO dropped (student_id, course_id, reason) VALUES
 -- Add more dummy data to the 'waiting' table
 INSERT INTO waiting (student_id, course_id) VALUES
 (7, 5);
+
+-- Insert data into the 'history' table
+INSERT INTO history (student_id, course_id, confirmation_number, datetime, action) VALUES
+(7, 4, 'CONF123456', DATETIME('2023-11-15T10:30:00'), 'enroll'),
+(8, 5, 'CONF654321', DATETIME('2023-11-16T11:45:00'), 'enroll'),
+(9, 6, 'CONF987654', DATETIME('2023-11-17T09:15:00'), 'enroll'),
+(10, 7, 'CONF456789', DATETIME('2023-11-18T14:00:00'), 'enroll'),
+(7, 5, 'CONF111111', DATETIME('2023-11-19T15:30:00'), 'waiting'),
+(7, 4, 'CONF222222', DATETIME('2023-11-20T08:45:00'), 'drop'),
+(8, 5, 'CONF333333', DATETIME('2023-11-21T10:00:00'), 'drop'),
+(9, 6, 'CONF444444', DATETIME('2023-11-22T11:30:00'), 'drop'),
+(10, 7, 'CONF555555', DATETIME('2023-11-23T13:00:00'), 'waiting'),
+(11, 8, 'CONF666666', DATETIME('2023-11-24T16:15:00'), 'enroll'),
+(12, 9, 'CONF777777', DATETIME('2023-11-25T08:00:00'), 'enroll'),
+(13, 10, 'CONF888888', DATETIME('2023-11-26T10:45:00'), 'enroll'),
+(14, 11, 'CONF999999', DATETIME('2023-11-27T12:30:00'), 'enroll'),
+(15, 12, 'CONF000000', DATETIME('2023-11-28T14:15:00'), 'waiting');

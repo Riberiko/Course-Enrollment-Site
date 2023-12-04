@@ -63,6 +63,21 @@ CREATE TABLE IF NOT EXISTS course (
         ON UPDATE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER NOT NULL,
+    course_id INTEGER NOT NULL,
+    confirmation_number VARCHAR(50) NOT NULL,
+    datetime DATETIME NOT NULL,
+    action TEXT CHECK(action IN ('enroll', 'waiting', 'drop')) NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES students(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES course(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS active_courses (
     course_id INTEGER PRIMARY KEY,
     FOREIGN KEY (course_id) REFERENCES course(id)
