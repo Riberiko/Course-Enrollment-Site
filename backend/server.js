@@ -61,6 +61,35 @@ app.get('/GetActiveCourseList', async function(req, res) {
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
 });
+//Retrieve individual course information, preqs and instructor info
+app.get('/getCourseInfo', async function(req, res){
+
+  let courseId = req.body.courseId;
+
+  if (!courseId){
+    res.status(USER_ERROR).send(USER_ERROR_ENDPOINT_MSG);
+  }
+  else{
+    try{
+      let connection = await getDBConnection();
+      console.log("connected to db");
+      let query = "SELECT * FROM course WHERE id = ?";
+      let courseResult = await connection.all(query, [courseId]);
+      query = "SELECT * FROM course_requirements WHERE ? = course_id";
+      let requirementsResult = await connection.all(query, [courseId]);
+      query = "SELECT * FROM person JOIN course ON person.id = course.teacher_id WHERE ? = course.id";
+      let instructorResult = await connection.all(query, [courseId]);
+      let output = {courseInfo : courseResult, instructorInfo : instructorResult, requirementsInfo : requirementsResult};
+      console.log(output);
+      await connection.close();
+      res.json(output);
+    }catch(err){
+      res.type('text');
+      res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+    }
+  }
+});
+
 
 //check if the username and password are valid
 app.get('/checkUserCreds', async function(req, res) {
