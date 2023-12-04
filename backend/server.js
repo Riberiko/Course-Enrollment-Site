@@ -124,6 +124,9 @@ app.get('/checkUserCreds', async function(req, res) {
   }
 });
 
+app.post('/register', isAuth, (req, res) => {
+})
+
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
