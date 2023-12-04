@@ -27,10 +27,40 @@ const DBNAME_MAIN = "main"
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-    next();
-  });
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+});
+
+async function isAuth(req, res, next){
+
+  const sessionid = req.cookies['sessionid']
+  const type = req.cookies['user_type']
+
+  if (!(sessionid && type))
+  {
+    res.clearCookie('sessionid')
+    res.clearCookie('user_type')
+    return res.status(400).send('User not properly LogedIn')
+  }
+
+  const db = await getDBConnection(), lookfor = type.substring(0, type.indexOf('_')+1)+'id'
+
+  const query = `SELECT ${lookfor} FROM ${type} WHERE session_id = ?;`
+  const cookieMatchDB = await db.all(query, [sessionid])
+
+  if(!cookieMatchDB.length)
+  {
+    res.clearCookie('sessionid')
+    res.clearCookie('user_type')
+    return res.status(400).send('User not properly LogedIn')
+  }
+
+  if(type == 'student_users') req.sessionid = cookieMatchDB[0]['student_users']
+  else req.sessionid = cookieMatchDB[0]['student_users']
+  req.user_table = type
+  next()
+}
 
   //base server check
 app.get('/', (req, res) => {
@@ -98,6 +128,7 @@ app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
 
+
 app.post('/login', async (req, res) => {
   const { username, password, type } = req.body
 
@@ -122,13 +153,28 @@ app.post('/login', async (req, res) => {
     let id = await getSessionId(type)
     let q = `UPDATE ${type} SET session_id = ? WHERE ${lookfor} = ?;`
     await db.run(q, [id, username])
-    res.cookie('sessionid', id, { expires: new Date(Date.now() + 60 * 1000) })
+
+    const expDate = new Date(Date.now() + 60 * 1000)
+
+    res.cookie('sessionid', id, { expires: expDate })
+    res.cookie('user_type', type, {expires: expDate})
     res.send('Login Successful')
   } else {
     res.status(400).send('Invalid credentails.')
   }
 
   await db.close()
+})
+
+app.post('/logout', isAuth, async (req, res) => {
+
+  const db = await getDBConnection()
+  const q = `UPDATE ${req.user_table} SET session_id = NULL WHERE session_id = ?;`
+    await db.run(q, [req.sessionid])
+    res.clearCookie('sessionid').send('Successfully logged out!')
+
+  await db.close()
+
 })
 
 /**
