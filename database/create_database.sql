@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS students (
     FOREIGN KEY (id) REFERENCES person(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    FOREIGN KEY (track_id) REFERENCES degree_track(id)
+    FOREIGN KEY (track_id) REFERENCES degree_track(track_id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS courses (
     code_type VARCHAR(3),
     code_number INTEGER,
     description TEXT,
-    season VARCHAR(2),
+    season VARCHAR(2)
 );
 
 CREATE TABLE IF NOT EXISTS derived_courses(

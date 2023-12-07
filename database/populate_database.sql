@@ -1,109 +1,127 @@
+-- State
 INSERT INTO state (code, name) VALUES
-('NY', 'New York'),
+('WA', 'Washington'),
 ('CA', 'California'),
+('NY', 'New York'),
 ('TX', 'Texas'),
 ('FL', 'Florida'),
-('IL', 'Illinois');
+('IL', 'Illinois'),
+('PA', 'Pennsylvania'),
+('OH', 'Ohio'),
+('GA', 'Georgia'),
+('NC', 'North Carolina');
 
-INSERT INTO address (street, city, state_code, zipcode) VALUES
-('456 Maple St', 'Villageville', 'NY', 10002),
-('789 Birch St', 'Citytown', 'CA', 90211),
-('101 Oak St', 'Townsville', 'TX', 75002),
-('202 Pine St', 'Villagetown', 'FL', 33101),
-('303 Cedar St', 'Countryside', 'IL', 60601),
-('404 Elm St', 'Metropolis', 'NY', 10003),
-('505 Walnut St', 'Cityville', 'CA', 90212),
-('606 Spruce St', 'Townton', 'TX', 75003),
-('707 Fir St', 'Villageton', 'FL', 33102),
-('808 Redwood St', 'Ruraltown', 'IL', 60602);
+-- Address
+INSERT INTO address (street, city, state, zip_code) VALUES
+('123 Main St', 'Seattle', 'WA', 98101),
+('456 Elm St', 'San Francisco', 'CA', 94102),
+('789 Oak St', 'New York City', 'NY', 10001),
+('1011 Maple Ave', 'Austin', 'TX', 78701),
+('523 Beach Blvd', 'Miami', 'FL', 33139),
+('647 Windy Lane', 'Chicago', 'IL', 60601),
+('890 Park Blvd', 'Philadelphia', 'PA', 19104),
+('321 Elm St', 'Columbus', 'OH', 43215),
+('759 Peachtree St', 'Atlanta', 'GA', 30303),
+('123 Pine Ave', 'Charlotte', 'NC', 28202);
 
-INSERT INTO person (first_name, last_name, middle_name, email, phone_number, address_id) VALUES
-('Alice', 'Johnson', 'D', 'alice.johnson@email.com', 1234567891, 1),
-('Bob', 'Miller', 'E', 'bob.miller@email.com', 9876543211, 2),
-('Charlie', 'Williams', 'F', 'charlie.williams@email.com', NULL, 3),
-('David', 'Brown', 'G', 'david.brown@email.com', 9876543212, 1),
-('Eva', 'Davis', 'H', 'eva.davis@email.com', 1234567892, 2),
-('Frank', 'Moore', 'I', 'frank.moore@email.com', NULL, 3),
-('Grace', 'Smith', 'J', 'grace.smith@email.com', 9876543213, 1),
-('Henry', 'Taylor', 'K', 'henry.taylor@email.com', 1234567893, 2),
-('Ivy', 'Martin', 'L', 'ivy.martin@email.com', NULL, 3),
-('Jack', 'Anderson', 'M', 'jack.anderson@email.com', 9876543214, 1);
+-- Person
+INSERT INTO person (first_name, last_name, middle_name, email, phone_number, address_id, dob) VALUES
+('John', 'Doe', 'A', 'johndoe@example.com', 1234567890, 1, '1990-01-01'),
+('Jane', 'Doe', 'B', 'janedoe@example.com', 9876543210, 2, '1991-02-02'),
+('Alice', 'Smith', 'C', 'alice@example.com', 0987654321, 3, '1992-03-03'),
+('Mike', 'Johnson', 'D', 'mike@example.com', 7891234560, 4, '1993-04-04'),
+('Mary', 'Brown', 'E', 'mary@example.com', 5678901234, 5, '1994-05-05'),
+('David', 'Miller', 'F', 'david@example.com', 3456789012, 6, '1995-06-06'),
+('Lisa', 'Garcia', 'G', 'lisa@example.com', 2345678901, 7, '1996-07-07'),
+('James', 'Williams', 'H', 'james@example.com', 9870123456, 8, '1997-08-08'),
+('Jennifer', 'Davis', 'I', 'jennifer@example.com', 6789012345, 9, '1998-09-09'),
+('Matthew', 'Lopez', 'J', 'matthew@example.com', 5670123456, 10, '1999-10-10');
 
-INSERT INTO teachers (id, salary) VALUES
-(4, 60000.00),
-(5, 70000.00),
-(6, 80000.00),
-(7, 75000.00),
-(8, 90000.00);
+-- Teachers (Extend Person)
+INSERT INTO teachers (teacher_id, salary) VALUES
+(1, 50000),
+(2, 60000),
+(3, 70000),
+(4, 80000),
+(5, 90000);
 
--- Add more dummy data to the 'students' table
+-- Students (Extend Person)
 INSERT INTO students (id, track_id) VALUES
-(7, 1),
-(8, 2),
-(9, 1),
-(10, 3);
+(1, 1),
+(2, 2),
+(3, 3),
+(4, 4),
+(5, 5),
+(6, 1),
+(7, 2),
+(8, 3),
+(9, 4),
+(10, 5);
 
--- Add more dummy data to the 'course' table
-INSERT INTO course (id, code_type, code_number, teacher_id, description, start_time, end_time, location, season, year, capacity) VALUES
-(4, 'CSE', 201, 4, 'Data Structures', '10:00', '11:30', 'Room D', 'F', 2023, 40),
-(5, 'MAT', 301, 5, 'Linear Algebra', '13:00', '14:30', 'Room E', 'F', 2023, 30),
-(6, 'ENG', 401, 6, 'Creative Writing', '15:00', '16:30', 'Room F', 'F', 2023, 20),
-(7, 'PHY', 101, 7, 'Introduction to Physics', '08:00', '09:30', 'Room G', 'F', 2023, 45),
-(8, 'CHE', 201, 8, 'Organic Chemistry', '10:00', '11:30', 'Room H', 'F', 2023, 35),
-(9, 'BIO', 301, 4, 'Genetics', '13:00', '14:30', 'Room I', 'F', 2023, 25),
-(10, 'PSY', 401, 5, 'Psychology of Mind', '15:00', '16:30', 'Room J', 'F', 2023, 15),
-(11, 'ART', 101, 6, 'Introduction to Art', '08:00', '09:30', 'Room K', 'F', 2023, 30),
-(12, 'MUS', 201, 4, 'Music Theory', '10:00', '11:30', 'Room L', 'F', 2023, 25),
-(13, 'HIS', 301, 5, 'World History', '13:00', '14:30', 'Room M', 'F', 2023, 20),
-(14, 'POL', 401, 6, 'Political Science', '15:00', '16:30', 'Room N', 'F', 2023, 18),
-(15, 'ECO', 101, 7, 'Microeconomics', '08:00', '09:30', 'Room O', 'F', 2023, 22),
-(16, 'SOC', 201, 8, 'Sociology', '10:00', '11:30', 'Room P', 'F', 2023, 28),
-(17, 'ANT', 301, 4, 'Cultural Anthropology', '13:00', '14:30', 'Room Q', 'F', 2023, 24),
-(18, 'GEO', 401, 5, 'Geography', '15:00', '16:30', 'Room R', 'F', 2023, 26),
-(19, 'LIT', 101, 6, 'American Literature', '08:00', '09:30', 'Room S', 'F', 2023, 32),
-(20, 'PHI', 201, 7, 'Philosophy', '10:00', '11:30', 'Room T', 'F', 2023, 19),
-(21, 'COM', 301, 8, 'Communication Studies', '13:00', '14:30', 'Room U', 'F', 2023, 16),
-(22, 'EDU', 401, 4, 'Education Theory', '15:00', '16:30', 'Room V', 'F', 2023, 14),
-(23, 'MKT', 101, 5, 'Marketing Fundamentals', '08:00', '09:30', 'Room W', 'F', 2023, 30),
-(24, 'FIN', 201, 6, 'Financial Management', '10:00', '11:30', 'Room X', 'F', 2023, 25),
-(25, 'HRM', 301, 7, 'Human Resource Management', '13:00', '14:30', 'Room Y', 'F', 2023, 20);
+-- Courses
+INSERT INTO courses (code_type, code_number, description, season) VALUES
+('CS', 101, 'Introduction to Computer Science', 'Fall'),
+('CS', 201, 'Data Structures and Algorithms', 'Spring'),
+('CS', 301, 'Software Engineering', 'Summer'),
+('MATH', 101, 'Calculus I', 'Fall'),
+('MATH', 201, 'Calculus II', 'Spring'),
+('MATH', 301, 'Linear Algebra', 'Summer'),
+('ENG', 101, 'Composition and Rhetoric', 'Fall'),
+('ENG', 201, 'Literature', 'Spring'),
+('ENG', 301, 'Creative Writing', 'Summer'),
+('HIST', 101, 'Western Civilization', 'Fall'),
+('HIST', 201, 'US History', 'Spring'),
+('HIST', 301, 'Global History', 'Summer');
 
--- Add more dummy data to the 'active_courses' table
-INSERT INTO active_courses (course_id) VALUES
-(4),
-(5),
-(6),
-(7);
+-- Derived Courses
+INSERT INTO derived_courses (course_id, teacher_id, location, year, capacity, start_time, end_time, is_active) VALUES
+(1, 1, 'Room 101', 2024, 20, '9:00AM', '10:00AM', true),
+(2, 2, 'Room 202', 2024, 15, '11:00AM', '12:00PM', true),
+(3, 3, 'Room 303', 2024, 30, '1:00PM', '2:00PM', true),
+(4, 4, 'Room 404', 2024, 25, '3:00PM', '4:00PM', true),
+(5, 5, 'Room 505', 2024, 20, '9:00AM', '10:00AM', true),
+(6, 1, 'Room 101', 2025, 20, '9:00AM', '10:00AM', true),
+(7, 2, 'Room 202', 2025, 15, '11:00AM', '12:00PM', true),
+(8, 3, 'Room 303', 2025, 30, '1:00PM', '2:00PM', true),
+(9, 4, 'Room 404', 2025, 25, '3:00PM', '4:00PM', true),
+(10, 5, 'Room 505', 2025, 20, '9:00AM', '10:00AM', true);
 
--- Add more dummy data to the 'course_requirements' table
+-- Course Requirements
 INSERT INTO course_requirements (course_id, pre_req_id, gpa_minimum) VALUES
+(2, 1, 3.0),
+(3, 2, 3.5),
 (5, 4, 3.0),
-(6, 5, 3.2),
-(7, 6, 3.5),
-(8, 7, 3.0),
-(9, 8, 3.2),
-(10, 9, 3.5);
+(6, 1, 2.5),
+(7, 2, 2.75),
+(8, 3, 3.25),
+(9, 4, 2.5),
+(10, 5, 2.75);
 
--- Add more dummy data to the 'enrolled' table
+-- Enrolled
 INSERT INTO enrolled (student_id, course_id) VALUES
-(7, 4),
-(8, 5),
-(9, 6),
-(10, 7);
+(1, 1),
+(1, 2),
+(2, 3),
+(2, 4),
+(3, 5),
+(3, 6),
+(4, 7),
+(4, 8),
+(5, 9),
+(5, 10);
 
--- Add more dummy data to the 'dropped' table
-INSERT INTO dropped (student_id, course_id, reason) VALUES
-(7, 4, 'Work commitments'),
-(8, 5, 'Health issues'),
-(9, 6, 'Travel plans'),
-(10, 7, 'Course overload'),
-(11, 8, 'Personal reasons'),
-(12, 9, 'Change of major'),
-(13, 10, 'Time conflict'),
-(14, 11, 'Not interested'),
-(15, 12, 'Family emergency'),
-(16, 13, 'Scheduling conflict');
+-- Completed
+INSERT INTO completed (student_id, derived_course_id, gpa) VALUES
+(1, 1, 4.0),
+(2, 3, 3.5),
+(3, 5, 4.0),
+(4, 7, 3.75),
+(5, 9, 3.25);
 
--- Add more dummy data to the 'waiting' table
-INSERT INTO waiting (student_id, course_id) VALUES
-(7, 5);
+-- Degree Track
+INSERT INTO degree_track (name, gpa_minimum) VALUES
+('Computer Science', 3.0),
+('Mathematics', 2.5),
+('Engineering', 3.25),
+('English Literature', 2.75),
+('History', 3.0);
