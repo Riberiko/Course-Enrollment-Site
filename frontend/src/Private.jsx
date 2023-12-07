@@ -9,16 +9,21 @@ export default ({children}) => {
     const [isAuth, setAuth] = useState(false)
 
     useEffect(()=>{
-        isAuthF(userData)
-        .then(() => {
-            setAuth(true)
-            setLoading(false)
-        })
-        .catch(() => {
-            setAuth(false)
-            setUser(null)
-            setLoading(false)
-        })
+        const checkAuth = async () => {
+            try {
+                await isAuthF();
+                console.log('User is logged in');
+                setAuth(true);
+                setLoading(false);
+            } catch (err) {
+                console.error(err);
+                setAuth(false);
+                setUser(null);
+                setLoading(false);
+            }
+        };
+
+        checkAuth();
     }, [])
 
     if(loading) return <>Checking Authentification ...</>

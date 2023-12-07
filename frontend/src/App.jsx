@@ -20,6 +20,7 @@ function App() {
       <Router>
         <Routes>
           <Route path='login' Component={Login} />
+          <Route path='/*' Component={DashBoard} />
         </Routes>
       </Router>
     </UserProvider>

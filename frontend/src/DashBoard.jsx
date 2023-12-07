@@ -17,12 +17,15 @@ export default () => {
             <Header />
             <h1>Dashboard</h1>
 
+            <h2>Name : </h2>
+
             <nav>
                 <Link to='account'>My Account</Link>
+                <Link to='registration'>Registration</Link>
             </nav>
             <Routes>
                 <Route path="account" element={<Private><AccountInfo /></Private>} />
-                <Route path="*" Component={NotFound} />
+                <Route path="registration" element={<Private></Private>} />
             </Routes>
         </>
     )
