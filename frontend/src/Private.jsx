@@ -1,31 +1,29 @@
 import { useEffect, useState } from "react"
 import { useUser } from './userContext';
-import { statusCheck } from './helper'
+import { isAuthF, statusCheck } from './helper'
 
 export default ({children}) => {
 
     const { userData, setUser } = useUser();
     const [loading, setLoading] = useState(true)
+    const [isAuth, setAuth] = useState(false)
 
     useEffect(()=>{
-        fetch('http://localhost:8000/isAuth', {
-            method: 'POST',
-            headers: 'application/json',
-            body: JSON.stringify({
-                'username' : userData.id
-            })
-        })
-        .then(res => statusCheck(res))
-        .then(setLoading(false))
-        .catch(err => {
+        isAuthF(userData)
+        .then(() => {
+            setAuth(true)
             setLoading(false)
-            console.log('Error Accessing Private | while checking is Auth')
+        })
+        .catch(() => {
+            setAuth(false)
+            setUser(null)
+            setLoading(false)
         })
     }, [])
 
     if(loading) return <>Checking Authentification ...</>
 
-    if(userData) return <>{children}</>
+    if(isAuth) return <>{children}</>
     else{
         return(
             <>
