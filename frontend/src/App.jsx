@@ -10,8 +10,8 @@ function App() {
     <UserProvider>
       <BrowserRouter>
         <Routes>
-          <Route path='/' Component={DashBoard} />
           <Route path='login' Component={Login} />
+          <Route path='dashboard' Component={DashBoard} />
         </Routes>
       </BrowserRouter>
     </UserProvider>
