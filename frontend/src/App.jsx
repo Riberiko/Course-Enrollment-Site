@@ -1,19 +1,29 @@
-import {BrowserRouter, Routes, Route} from 'react-router-dom'
+import { BrowserRouter as Router,Routes, Route } from 'react-router-dom';
 import Login from './Login'
 import DashBoard from './DashBoard'
+import NotFound from './NotFound'
 import { UserProvider } from './userContext'
+
+function Home(){
+  return(
+    <>
+      Home
+    </>
+  )
+}
 
 
 function App() {
 
   return (
     <UserProvider>
-      <BrowserRouter>
+      <Router>
         <Routes>
-          <Route path='/' Component={DashBoard} />
           <Route path='login' Component={Login} />
+          <Route path='dashboard/*' Component={DashBoard} />
+
         </Routes>
-      </BrowserRouter>
+      </Router>
     </UserProvider>
   )
 }

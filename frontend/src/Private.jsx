@@ -8,7 +8,7 @@ export default ({children}) => {
     const [loading, setLoading] = useState(true)
 
     useEffect(()=>{
-        fetch(process.env.BACKEND_URL+'/isAuth', {
+        fetch('http://localhost:8000/isAuth', {
             method: 'POST',
             headers: 'application/json',
             body: JSON.stringify({
@@ -17,12 +17,15 @@ export default ({children}) => {
         })
         .then(res => statusCheck(res))
         .then(setLoading(false))
-        .catch(err => console.log('Error Accessing Private | while checking is Auth'))
+        .catch(err => {
+            setLoading(false)
+            console.log('Error Accessing Private | while checking is Auth')
+        })
     }, [])
 
     if(loading) return <>Checking Authentification ...</>
 
-    if(userData) return {children}
+    if(userData) return <>{children}</>
     else{
         return(
             <>
