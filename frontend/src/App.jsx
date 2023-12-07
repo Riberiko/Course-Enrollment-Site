@@ -20,8 +20,6 @@ function App() {
       <Router>
         <Routes>
           <Route path='login' Component={Login} />
-          <Route path='dashboard/*' Component={DashBoard} />
-
         </Routes>
       </Router>
     </UserProvider>
