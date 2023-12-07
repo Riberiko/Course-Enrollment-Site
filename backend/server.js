@@ -26,16 +26,21 @@ const DBNAME_MAIN = "main"
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  next();
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+next();
 });
 
 async function isAuth(req, res, next){
 
   const sessionid = req.cookies['sessionid']
   const type = req.cookies['user_type']
+
+  console.log(sessionid, type)
 
   if (!(sessionid && type))
   {
@@ -63,8 +68,8 @@ async function isAuth(req, res, next){
 }
 
   //base server check
-app.get('/', (req, res) => {
-  res.send('Hello from the backend!');
+app.post('/isAuth', isAuth, (req, res) => {
+  res.send('user isAuthenticated');
 });
 
 //Retrieve course list (all courses ever)

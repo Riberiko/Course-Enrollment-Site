@@ -7,9 +7,9 @@ CREATE TABLE IF NOT EXISTS address (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     street VARCHAR(255) NOT NULL,
     city VARCHAR(100) NOT NULL,
-    state_code VARCHAR(2) NOT NULL,
-    zipcode INTEGER NOT NULL,
-    FOREIGN KEY (state_code) REFERENCES state(code)
+    state VARCHAR(2) NOT NULL,
+    zip_code INTEGER NOT NULL,
+    FOREIGN KEY (state) REFERENCES state(code)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
@@ -22,15 +22,16 @@ CREATE TABLE IF NOT EXISTS person (
     email VARCHAR(50) NOT NULL UNIQUE,
     phone_number INTEGER,
     address_id INTEGER,
+    dob DATE,
     FOREIGN KEY (address_id) REFERENCES address(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS teachers (
-    id INTEGER PRIMARY KEY,
+    teacher_id INTEGER PRIMARY KEY,
     salary REAL,
-    FOREIGN KEY (id) REFERENCES person(id)
+    FOREIGN KEY (teacher_id) REFERENCES person(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
@@ -46,39 +47,40 @@ CREATE TABLE IF NOT EXISTS students (
         ON UPDATE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS course (
+CREATE TABLE IF NOT EXISTS courses (
     id INTEGER PRIMARY KEY,
     code_type VARCHAR(3),
     code_number INTEGER,
-    teacher_id INTEGER,
     description TEXT,
-    start_time TEXT NOT NULL,
-    end_time TEXT NOT NULL,
-    location VARCHAR(20),
-    season VARCHAR(1),
-    year INTEGER,
-    capacity INTEGER NOT NULL,
-    FOREIGN KEY (teacher_id) REFERENCES teachers(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE
+    season VARCHAR(2),
 );
 
-CREATE TABLE IF NOT EXISTS active_courses (
+CREATE TABLE IF NOT EXISTS derived_courses(
     course_id INTEGER PRIMARY KEY,
-    FOREIGN KEY (course_id) REFERENCES course(id)
+    teacher_id INTEGER,
+    location VARCHAR,
+    year INT,
+    capacity TYPE,
+    start_time TYPE,
+    end_time TYPE,
+    is_active BOOLEAN,
+    FOREIGN KEY (course_id) REFERENCES courses(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (teacher_id) REFERENCES teachers(teacher_id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS course_requirements (
+    id INTEGER PRIMARY KEY,
     course_id INTEGER NOT NULL,
     pre_req_id INTEGER NOT NULL,
     gpa_minimum REAL,
-    PRIMARY KEY (course_id, pre_req_id),
-    FOREIGN KEY (course_id) REFERENCES course(id)
+    FOREIGN KEY (course_id) REFERENCES courses(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    FOREIGN KEY (pre_req_id) REFERENCES course(id)
+    FOREIGN KEY (pre_req_id) REFERENCES courses(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
@@ -90,7 +92,7 @@ CREATE TABLE IF NOT EXISTS enrolled (
     FOREIGN KEY (student_id) REFERENCES students(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    FOREIGN KEY (course_id) REFERENCES course(id)
+    FOREIGN KEY (course_id) REFERENCES courses(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
@@ -103,38 +105,38 @@ CREATE TABLE IF NOT EXISTS dropped (
     FOREIGN KEY (student_id) REFERENCES students(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    FOREIGN KEY (course_id) REFERENCES course(id)
+    FOREIGN KEY (course_id) REFERENCES courses(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS waiting (
     student_id INTEGER NOT NULL,
-    course_id INTEGER NOT NULL,
-    PRIMARY KEY (student_id, course_id),
+    derived_course_id INTEGER NOT NULL,
+    PRIMARY KEY (student_id, derived_course_id),
     FOREIGN KEY (student_id) REFERENCES students(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    FOREIGN KEY (course_id) REFERENCES course(id)
+    FOREIGN KEY (derived_course_id) REFERENCES courses(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS completed (
     student_id INTEGER NOT NULL,
-    course_id INTEGER NOT NULL,
+    derived_course_id INTEGER NOT NULL,
     gpa REAL NOT NULL,
-    PRIMARY KEY (student_id, course_id),
+    PRIMARY KEY (student_id, derived_course_id),
     FOREIGN KEY (student_id) REFERENCES students(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    FOREIGN KEY (course_id) REFERENCES course(id)
+    FOREIGN KEY (derived_course_id) REFERENCES courses(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS degree_track (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    track_id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(20) NOT NULL,
     gpa_minimum REAL NOT NULL
 );
@@ -147,19 +149,19 @@ CREATE TABLE IF NOT EXISTS degree_track_requirements (
     FOREIGN KEY (track_id) REFERENCES degree_track(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    FOREIGN KEY (course_id) REFERENCES course(id)
+    FOREIGN KEY (course_id) REFERENCES courses(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS teacher_users (
     teacher_id INTEGER NOT NULL PRIMARY KEY,
-    password VARCHAR(50) NOT NULL,
+    password VARCHAR(255) NOT NULL,
     session_id VARCHAR(255)
 );
 
 CREATE TABLE IF NOT EXISTS student_users (
     student_id INTEGER NOT NULL PRIMARY KEY,
-    password VARCHAR(50) NOT NULL,
+    password VARCHAR(255) NOT NULL,
     session_id VARCHAR(255)
 );
