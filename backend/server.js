@@ -74,9 +74,10 @@ app.post('/isAuth', isAuth, (req, res) => {
 
 //Retrieve course list (all courses ever)
 app.get('/GetEntireCourseList', async function(req, res) {
+  console.log("called /GetEntireCourseList")
   try {
     let db = await getDBConnection();
-    let courses = await db.all('SELECT * FROM course ORDER BY start_time;');
+    let courses = await db.all('SELECT * FROM courses ORDER BY code_type;');
     await db.close();
     res.json(courses);
   } catch (err) {
@@ -86,12 +87,14 @@ app.get('/GetEntireCourseList', async function(req, res) {
 });
 //Retrieve course list (currently active courses)
 app.get('/GetActiveCourseList', async function(req, res) {
+  console.log("called /GetActiveCourseList")
   try {
     let db = await getDBConnection();
-    let courses = await db.all('SELECT * FROM active_courses JOIN course WHERE course.id = active_courses.course_id;');
+    let courses = await db.all('SELECT * FROM derived_courses JOIN courses ON courses.id = derived_courses.course_id AND derived_courses.is_active = TRUE;');
     await db.close();
     res.json(courses);
   } catch (err) {
+    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
@@ -108,17 +111,18 @@ app.get('/getCourseInfo', async function(req, res){
     try{
       let connection = await getDBConnection();
       console.log("connected to db");
-      let query = "SELECT * FROM course WHERE id = ?";
+      let query = "SELECT courses.code_type, courses.code_number, derived_courses.* FROM derived_courses JOIN courses ON courses.id = derived_courses.course_id WHERE ? = courses.id;";
       let courseResult = await connection.all(query, [courseId]);
-      query = "SELECT * FROM course_requirements WHERE ? = course_id";
+      query = "SELECT course_requirements.pre_req_id, courses.code_type, courses.code_number FROM course_requirements JOIN courses ON course_requirements.course_id = ? WHERE courses.id = course_requirements.pre_req_id;";
       let requirementsResult = await connection.all(query, [courseId]);
-      query = "SELECT * FROM person JOIN course ON person.id = course.teacher_id WHERE ? = course.id";
+      query = "SELECT person.* FROM person JOIN teachers ON person.id = teachers.teacher_id JOIN derived_courses ON teachers.teacher_id = derived_courses.teacher_id WHERE derived_courses.course_id = ?;";
       let instructorResult = await connection.all(query, [courseId]);
       let output = {courseInfo : courseResult, instructorInfo : instructorResult, requirementsInfo : requirementsResult};
       console.log(output);
       await connection.close();
       res.json(output);
     }catch(err){
+      console.log(err)
       res.type('text');
       res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
     }
