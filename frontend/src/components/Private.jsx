@@ -5,7 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 const AuthChecker = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [isAuth, setAuth] = useState(false);
-    const [time, setTime] = useState(null);
+    const [time, setTime] = useState(10000);
     const [timerId, setTimerId] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
@@ -35,7 +35,7 @@ const AuthChecker = ({ children }) => {
     }, [location.pathname]);
 
     useEffect(() => {
-        if(time == 0) navigate('/login')
+        if(time <= 0) navigate('/login')
     }, [time]);
 
     useEffect(()=>{

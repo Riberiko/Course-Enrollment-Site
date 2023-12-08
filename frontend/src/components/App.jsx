@@ -1,7 +1,7 @@
 import { BrowserRouter as Router,Routes, Route } from 'react-router-dom';
 import Login from './Login'
 import DashBoard from './DashBoard'
-import NotFound from './NotFound'
+import '../assets/css/app.css'
 import { UserProvider } from '../userContext'
 
 function Home(){
