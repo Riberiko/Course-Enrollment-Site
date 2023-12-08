@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS degree_track_requirements (
     course_id INTEGER NOT NULL,
     gpa_minimum REAL,
     PRIMARY KEY (track_id, course_id),
-    FOREIGN KEY (track_id) REFERENCES degree_track(id)
+    FOREIGN KEY (track_id) REFERENCES degree_track(track_id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
     FOREIGN KEY (course_id) REFERENCES courses(id)
