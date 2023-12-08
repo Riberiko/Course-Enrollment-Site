@@ -45,19 +45,6 @@ INSERT INTO teachers (teacher_id, salary) VALUES
 (4, 80000),
 (5, 90000);
 
--- Students (Extend Person)
-INSERT INTO students (id, track_id) VALUES
-(1, 1),
-(2, 2),
-(3, 3),
-(4, 4),
-(5, 5),
-(6, 1),
-(7, 2),
-(8, 3),
-(9, 4),
-(10, 5);
-
 -- Courses
 INSERT INTO courses (code_type, code_number, description, season) VALUES
 ('CS', 101, 'Introduction to Computer Science', 'Fall'),
@@ -97,6 +84,27 @@ INSERT INTO course_requirements (course_id, pre_req_id, gpa_minimum) VALUES
 (9, 4, 2.5),
 (10, 5, 2.75);
 
+-- Degree Track
+INSERT INTO degree_track (name, gpa_minimum) VALUES
+('Computer Science', 3.0),
+('Mathematics', 2.5),
+('Engineering', 3.25),
+('English Literature', 2.75),
+('History', 3.0);
+
+-- Students (Extend Person)
+INSERT INTO students (id, track_id) VALUES
+(1, 1),
+(2, 2),
+(3, 3),
+(4, 4),
+(5, 5),
+(6, 1),
+(7, 2),
+(8, 3),
+(9, 4),
+(10, 5);
+
 -- Enrolled
 INSERT INTO enrolled (student_id, course_id) VALUES
 (1, 1),
@@ -117,11 +125,3 @@ INSERT INTO completed (student_id, derived_course_id, gpa) VALUES
 (3, 5, 4.0),
 (4, 7, 3.75),
 (5, 9, 3.25);
-
--- Degree Track
-INSERT INTO degree_track (name, gpa_minimum) VALUES
-('Computer Science', 3.0),
-('Mathematics', 2.5),
-('Engineering', 3.25),
-('English Literature', 2.75),
-('History', 3.0);
