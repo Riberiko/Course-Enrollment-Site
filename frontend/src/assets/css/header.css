@@ -1,0 +1,11 @@
+header{
+    width: 100%;
+    background-color: black;
+    min-height: 150px;
+    height: 10%;
+    background-image: url(../images/building.avif);
+    background-position: center 45%;
+    background-repeat: no-repeat;
+    background-size: cover;
+    
+}

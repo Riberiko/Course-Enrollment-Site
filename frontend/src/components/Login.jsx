@@ -3,7 +3,7 @@ import Form from 'react-bootstrap/Form';
 import { Container, Row, Col, Image } from "react-bootstrap";
 import {isAuthF} from '../helper'
 import Button from 'react-bootstrap/Button';
-import image from '../assets/images/building.jpeg';
+import image from '../assets/images/building.avif';
 import { useNavigate } from 'react-router-dom';
 
 function handleLogin(user_type, navigate){
@@ -52,7 +52,7 @@ export default () => {
     }, [])
 
     return(
-        !isAuth && <Container>
+        !isAuth && <Container className='justify-content-md-center'>
         <Row className="justify-content-md-center">
             <Col md="auto">
             <Image src={image}  style={{ width: '400px', height: '260px' }} />
