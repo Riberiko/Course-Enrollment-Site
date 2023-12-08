@@ -81,10 +81,11 @@ app.post('/isAuth', isAuth, (req, res) => {
 
 //Retrieve course list (all courses ever)
 app.get('/GetEntireCourseList', async function(req, res) {
-  let db
+
   try {
-    db = await getDBConnection();
-    let courses = await db.all('SELECT * FROM courses ORDER BY code_type;');
+    const db = await getDBConnection();
+    const courses = await db.all('SELECT * FROM courses ORDER BY code_type;');
+    await db.close();
     res.json(courses);
   } catch (err) {
     res.type('text');
@@ -94,10 +95,11 @@ app.get('/GetEntireCourseList', async function(req, res) {
 });
 //Retrieve course list (currently active courses)
 app.get('/GetActiveCourseList', async function(req, res) {
-  let db
+
   try {
-    db = await getDBConnection();
-    let courses = await db.all('SELECT * FROM derived_courses JOIN courses ON courses.id = derived_courses.course_id AND derived_courses.is_active = TRUE;');
+    const db = await getDBConnection();
+    const courses = await db.all('SELECT * FROM derived_courses JOIN courses ON courses.id = derived_courses.course_id AND derived_courses.is_active = TRUE;');
+    await db.close();
     res.json(courses);
   } catch (err) {
     console.log(err)
@@ -106,10 +108,38 @@ app.get('/GetActiveCourseList', async function(req, res) {
   }
   if(db) await db.close()
 });
+//TODO: add a /getuserbyID endpoint for riko
+
+//Retrieve courses by course type, number and season
+app.get('/searchCourses', async function(req, res){
+
+  const type = `%${req.body.courseType}%`;
+  const number = `%${req.body.courseNum}%`;
+  const season = `%${req.body.courseSeason}%`;
+
+  try{
+    const connection = await getDBConnection();
+    console.log(type, number, season)
+    const query = `SELECT * FROM courses WHERE courses.code_type LIKE ? AND courses.code_number LIKE ? AND courses.season LIKE ?`;
+    const searchResult = await connection.all(query,[type, number, season]);
+    const output = {filteredCourses : searchResult};
+    console.log(searchResult)
+
+    await connection.close();
+
+    res.json(output);
+
+  }catch(err){
+    console.log(err)
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
+});
+
 //Retrieve individual course information, preqs and instructor info
 app.get('/getCourseInfo', async function(req, res){
 
-  let courseId = req.body.courseId;
+  const courseId = req.body.courseId;
 
   if (!courseId){
     res.status(USER_ERROR).send(USER_ERROR_ENDPOINT_MSG);
@@ -117,14 +147,17 @@ app.get('/getCourseInfo', async function(req, res){
   else{
     let connection
     try{
-      connection = await getDBConnection();
+      const connection = await getDBConnection();
       let query = "SELECT courses.code_type, courses.code_number, derived_courses.* FROM derived_courses JOIN courses ON courses.id = derived_courses.course_id WHERE ? = courses.id;";
-      let courseResult = await connection.all(query, [courseId]);
+      const courseResult = await connection.all(query, [courseId]);
       query = "SELECT course_requirements.pre_req_id, courses.code_type, courses.code_number FROM course_requirements JOIN courses ON course_requirements.course_id = ? WHERE courses.id = course_requirements.pre_req_id;";
-      let requirementsResult = await connection.all(query, [courseId]);
+      const requirementsResult = await connection.all(query, [courseId]);
       query = "SELECT person.* FROM person JOIN teachers ON person.id = teachers.teacher_id JOIN derived_courses ON teachers.teacher_id = derived_courses.teacher_id WHERE derived_courses.course_id = ?;";
-      let instructorResult = await connection.all(query, [courseId]);
-      let output = {courseInfo : courseResult, instructorInfo : instructorResult, requirementsInfo : requirementsResult};
+      const instructorResult = await connection.all(query, [courseId]);
+      const output = {courseInfo : courseResult, instructorInfo : instructorResult, requirementsInfo : requirementsResult};
+      
+      await connection.close();
+      
       res.json(output);
     }catch(err){
       res.type('text');
@@ -138,8 +171,8 @@ app.get('/getCourseInfo', async function(req, res){
 //check if the username and password are valid
 app.get('/checkUserCreds', async function(req, res) {
 
-  let userid = req.body.username;
-  let password = req.body.password;
+  const userid = req.body.username;
+  const password = req.body.password;
 
   if (!(userid && password)) {
     res.status(USER_ERROR).send(USER_ERROR_ENDPOINT_MSG);
@@ -147,7 +180,7 @@ app.get('/checkUserCreds', async function(req, res) {
   else {
     let connection
     try {
-      connection = await getDBConnection();
+      const connection = await getDBConnection();
       //check the teacher_user table
       let query = "SELECT teacher_id FROM teacher_users WHERE teacher_id = ? AND password = ?";
       let result = await connection.all(query, [userid, password]);
@@ -158,7 +191,7 @@ app.get('/checkUserCreds', async function(req, res) {
         res.status(USER_ERROR).send(USER_ERROR_NO_USER_MSG);
       }
       else {
-        let userFound = {"validCredentials" : "True"};
+        const userFound = {"validCredentials" : "True"};
         res.status(USER_ERROR).json(userFound);
       }
     } catch (err) {
