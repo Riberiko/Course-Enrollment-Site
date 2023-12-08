@@ -3,19 +3,16 @@ import Form from 'react-bootstrap/Form';
 import { Container, Row, Col, Image } from "react-bootstrap";
 import {isAuthF} from './helper'
 import Button from 'react-bootstrap/Button';
-import InputGroup from 'react-bootstrap/InputGroup';
 import image from './assets/images/building.jpeg';
+import { useNavigate } from 'react-router-dom';
 
-function handleLogin(){
+function handleLogin(user_type, navigate){
     const backendUrl = import.meta.env.BACKEND_URL || "http://localhost:8000";
     const username = document.getElementById("inputUsername").value;
     const password = document.getElementById("inputPassword5").value;
 
 
-    if (!username || !password) {
-        console.error("Username and password are required");
-        return;
-    }
+    if (!username || !password) return
 
     fetch(`${backendUrl}/login`, {
         method: "POST",
@@ -23,19 +20,18 @@ function handleLogin(){
         headers: {
             "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, password,type:"student_users" }),
+        body: JSON.stringify({ username, password,type: user_type }),
     })
     .then((res) => {
         if (!res.ok) throw new Error("Login failed: " + res.status);
         return res
     })
     .then((data) => {
-        console.log(data);
-        window.location.href = "/account";
+        console.log('loggedin')
+        navigate('/account')
         // Handle successful login, e.g., storing the token, redirecting, etc.
     })
     .catch((err) => {
-       console.log(err);
         // Handle login failed, show user feedback
     });
 }
@@ -43,17 +39,20 @@ function handleLogin(){
 
 export default () => {
 
-
+    const navigate = useNavigate()
     const [isAuth, setAuth] = useState(false)
+    const [user_type, setType] = useState('student_users')
 
     useEffect(() => {
-        isAuthF()
-        .then(() => setAuth(true))
-        .catch(() => setAuth(false))
+        (async() =>{
+            const isAuthCheck = await isAuthF()
+            console.log(isAuthCheck)
+            if(isAuthCheck) navigate('/account')
+        })()
     }, [])
 
     return(
-        !isAuth ? <Container>
+        !isAuth && <Container>
         <Row className="justify-content-md-center">
             <Col md="auto">
             <Image src={image}  style={{ width: '400px', height: '260px' }} />
@@ -87,23 +86,19 @@ export default () => {
         </Row>
         </div>
         <div className= "row">
-        <InputGroup className="mb-3">
-        <InputGroup.Radio aria-label="Radio button for Student" name="userRole" />
-        <InputGroup.Text>Student</InputGroup.Text>
-    </InputGroup>
+        <Form className="mb-3">
+            <Form.Check type='radio' checked={user_type=='student_users'} onChange={() => setType('student_users')} label={<span onClick={()=>setType('student_users')}>Student</span>} name="userRole" />
+            <Form.Check type='radio' checked={user_type=='teacher_users'} onChange={() => setType('teacher_users')} label={<span onClick={()=>setType('teacher_users')}>Teacher</span>} name="userRole" />
+        </Form>
 
-    <InputGroup className="mb-3">
-        <InputGroup.Radio aria-label="Radio button for Teacher" name="userRole" />
-        <InputGroup.Text>Teacher</InputGroup.Text>
-    </InputGroup>
         </div>
         <Row className="justify-content-md-center">
         <div className='text-center'>
                 <Button type="button" className="btn btn-primary btn-lg" style = {
-                    {backgroundColor : "skyblue", marginBottom : "0"}} onClick={handleLogin}>Login</Button>
+                    {backgroundColor : "skyblue", marginBottom : "0"}} onClick={()=>handleLogin(user_type, navigate)}>Login</Button>
             </div>
         </Row>
 
-    </Container> : <>{window.location.href = '/account'}</>
+    </Container>
     )
 }

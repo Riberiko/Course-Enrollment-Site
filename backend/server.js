@@ -32,38 +32,45 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-next();
+  next();
 });
 
 async function isAuth(req, res, next){
 
   const sessionid = req.cookies['sessionid']
   const type = req.cookies['user_type']
+  const username = req.cookies['username']
 
-  console.log(sessionid, type)
-
-  if (!(sessionid && type))
+  if (!(sessionid && type && username))
   {
     res.clearCookie('sessionid')
     res.clearCookie('user_type')
+    res.clearCookie('username')
     return res.status(400).send('User not properly LogedIn')
+  }
+
+  if (!(type == 'student_users' || type == 'teacher_users'))
+  {
+    return res.status(400).send('either missing type argument or type is not equal to teacher_users or student_users')
   }
 
   const db = await getDBConnection(), lookfor = type.substring(0, type.indexOf('_')+1)+'id'
 
-  const query = `SELECT ${lookfor} FROM ${type} WHERE session_id = ?;`
-  const cookieMatchDB = await db.all(query, [sessionid])
+  const query = `SELECT ${lookfor} FROM ${type} WHERE session_id = ? AND ${lookfor} = ?;`
+  const cookieMatchDB = await db.all(query, [sessionid, username])
 
   if(!cookieMatchDB.length)
   {
     res.clearCookie('sessionid')
     res.clearCookie('user_type')
+    res.clearCookie('username')
     return res.status(400).send('User not properly LogedIn')
   }
 
-  if(type == 'student_users') req.sessionid = cookieMatchDB[0]['student_users']
-  else req.sessionid = cookieMatchDB[0]['student_users']
+  req.sessionid = cookieMatchDB[0][lookfor]
   req.user_table = type
+  req.username = username
+  await db.close()
   next()
 }
 
@@ -74,30 +81,30 @@ app.post('/isAuth', isAuth, (req, res) => {
 
 //Retrieve course list (all courses ever)
 app.get('/GetEntireCourseList', async function(req, res) {
-  console.log("called /GetEntireCourseList")
+  let db
   try {
-    let db = await getDBConnection();
+    db = await getDBConnection();
     let courses = await db.all('SELECT * FROM courses ORDER BY code_type;');
-    await db.close();
     res.json(courses);
   } catch (err) {
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
+  if(db) await db.close();
 });
 //Retrieve course list (currently active courses)
 app.get('/GetActiveCourseList', async function(req, res) {
-  console.log("called /GetActiveCourseList")
+  let db
   try {
-    let db = await getDBConnection();
+    db = await getDBConnection();
     let courses = await db.all('SELECT * FROM derived_courses JOIN courses ON courses.id = derived_courses.course_id AND derived_courses.is_active = TRUE;');
-    await db.close();
     res.json(courses);
   } catch (err) {
     console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
+  if(db) await db.close()
 });
 //Retrieve individual course information, preqs and instructor info
 app.get('/getCourseInfo', async function(req, res){
@@ -108,9 +115,9 @@ app.get('/getCourseInfo', async function(req, res){
     res.status(USER_ERROR).send(USER_ERROR_ENDPOINT_MSG);
   }
   else{
+    let connection
     try{
-      let connection = await getDBConnection();
-      console.log("connected to db");
+      connection = await getDBConnection();
       let query = "SELECT courses.code_type, courses.code_number, derived_courses.* FROM derived_courses JOIN courses ON courses.id = derived_courses.course_id WHERE ? = courses.id;";
       let courseResult = await connection.all(query, [courseId]);
       query = "SELECT course_requirements.pre_req_id, courses.code_type, courses.code_number FROM course_requirements JOIN courses ON course_requirements.course_id = ? WHERE courses.id = course_requirements.pre_req_id;";
@@ -118,14 +125,12 @@ app.get('/getCourseInfo', async function(req, res){
       query = "SELECT person.* FROM person JOIN teachers ON person.id = teachers.teacher_id JOIN derived_courses ON teachers.teacher_id = derived_courses.teacher_id WHERE derived_courses.course_id = ?;";
       let instructorResult = await connection.all(query, [courseId]);
       let output = {courseInfo : courseResult, instructorInfo : instructorResult, requirementsInfo : requirementsResult};
-      console.log(output);
-      await connection.close();
       res.json(output);
     }catch(err){
-      console.log(err)
       res.type('text');
       res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
     }
+    if(connection) await connection.close()
   }
 });
 
@@ -140,8 +145,9 @@ app.get('/checkUserCreds', async function(req, res) {
     res.status(USER_ERROR).send(USER_ERROR_ENDPOINT_MSG);
   }
   else {
+    let connection
     try {
-      let connection = await getDBConnection();
+      connection = await getDBConnection();
       //check the teacher_user table
       let query = "SELECT teacher_id FROM teacher_users WHERE teacher_id = ? AND password = ?";
       let result = await connection.all(query, [userid, password]);
@@ -154,11 +160,11 @@ app.get('/checkUserCreds', async function(req, res) {
       else {
         let userFound = {"validCredentials" : "True"};
         res.status(USER_ERROR).json(userFound);
-        await connection.close();
       }
     } catch (err) {
       res.status(SERVER_ERROR).send(SERVER_ERROR_MSG);
     }
+    if(connection) await connection.close()
   }
 });
 
@@ -192,10 +198,11 @@ app.post('/login', async (req, res) => {
     let q = `UPDATE ${type} SET session_id = ? WHERE ${lookfor} = ?;`
     await db.run(q, [id, username])
 
-    const expDate = new Date(Date.now() + 60 * 1000)
+    const expDate = new Date(Date.now() + 10 * 60 * 1000)
 
-    res.cookie('sessionid', id, { expires: expDate })
-    res.cookie('user_type', type, {expires: expDate})
+    res.cookie('sessionid', id, { expires: expDate, sameSite: 'none' })
+    res.cookie('user_type', type, {expires: expDate, sameSite: 'none'})
+    res.cookie('username', result[0][lookfor], {expires: expDate, sameSite: 'none'})
     res.send('Login Successful')
   } else {
     res.status(400).send('Invalid credentails.')
