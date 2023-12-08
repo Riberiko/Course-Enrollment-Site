@@ -4,7 +4,7 @@ import AccountInfo from "./AccountInfo"
 import Transaction from "./Transaction"
 import Registration from "./Registration"
 import NotFound from "./NotFound"
-import { isAuthF, statusCheck } from "./helper"
+import { isAuthF, statusCheck } from "../helper"
 import { useEffect, useState } from "react"
 
 function Header(){

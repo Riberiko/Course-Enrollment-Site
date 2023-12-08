@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import Form from 'react-bootstrap/Form';
 import { Container, Row, Col, Image } from "react-bootstrap";
-import {isAuthF} from './helper'
+import {isAuthF} from '../helper'
 import Button from 'react-bootstrap/Button';
-import image from './assets/images/building.jpeg';
+import image from '../assets/images/building.jpeg';
 import { useNavigate } from 'react-router-dom';
 
 function handleLogin(user_type, navigate){

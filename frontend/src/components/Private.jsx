@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { isAuthF } from './helper';
+import { isAuthF } from '../helper';
 import { useLocation, useNavigate } from "react-router-dom";
 
 const AuthChecker = ({ children }) => {
