@@ -11,7 +11,7 @@ import { useEffect, useState } from "react"
 function Header(){
     return(
         <header>
-            Header
+            <h3>Some college</h3>
         </header>
     )
 }
