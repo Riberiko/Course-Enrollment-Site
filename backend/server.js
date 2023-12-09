@@ -15,14 +15,23 @@ app.use(express.json());
 app.use(multer().none());
 app.use(cookieParser());
 
+//CONSTANTS
+const PREREQ_IDX = 0;
 
 //ERRORS
 const USER_ERROR = 400;
 const USER_ERROR_ENDPOINT_MSG = "Invalid endpoint or parameters."
 const USER_ERROR_NO_USER_MSG = "No userID or password for that entry."
+const PREREQ_ERROR_PREREQ_NOT_MET = "Prerequisite course not completed."
 const SERVER_ERROR = 500;
 const SERVER_ERROR_MSG = "Unable to retrieve from the database: "
 const DBNAME_MAIN = "main"
+
+//HAPPY RESPONSES
+const ENROLLED_IN_COURSE = "You have been successfully enrolled in the course"
+const ALREADY_ENROLLED = "Already enrolled into this course."
+const NOT_ENROLLED = "Not enrolled in that course."
+const DROPPED_COURSE = "You have successfully dropped: "
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -44,7 +53,91 @@ app.post('/isAuth', isAuth, (req, res) => {
   res.send('user isAuthenticated');
 });
 
-//TODO: make endpoints for adding enrolled and dropped classes
+//Endpoint for enrolling in a course
+app.post('/addEnrolledCourse', isAuth, async function(req, res){
+  
+  const courseId = req.body.courseId;
+  const studentId = req.username;
+
+  try{
+    const connection = await getDBConnection();
+    //get the prereq of this course
+    let query = "SELECT course_requirements.pre_req_id FROM course_requirements JOIN courses ON course_requirements.course_id = ? WHERE courses.id = course_requirements.pre_req_id;";
+    const preReq = await connection.all(query, [courseId]);
+    const preReqId = preReq[PREREQ_IDX].pre_req_id;
+    //check to see if the student has completed the prereq yet
+    query = "SELECT * FROM completed WHERE completed.student_id = ? AND completed.derived_course_id = ?;";
+    const completedCourse = await connection.all(query,[studentId, preReqId]);
+    //check to see if the student is already enrolled
+    query = "SELECT * FROM enrolled WHERE enrolled.student_id = ? AND enrolled.course_id = ?;";
+    const enrolledCourse = await connection.all(query, [studentId, courseId]);
+    
+    if(completedCourse.length > 0 && enrolledCourse.length == 0){ //user completed the prereq and isn't already enrolled.
+      query = "INSERT INTO enrolled (student_id, course_id) VALUES (?,?)";
+      await connection.all(query,[studentId, courseId]);
+      
+      res.json({"response" : ENROLLED_IN_COURSE});
+    }
+    else if(enrolledCourse.length > 0){ //student already enrolled
+      res.json({"response": ALREADY_ENROLLED});
+    }
+    else{//student didn't complete the prereq yet. return an error
+      res.status(USER_ERROR).send(PREREQ_ERROR_PREREQ_NOT_MET);
+    }
+    await connection.close();
+  }catch(err){
+    console.log(err)
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
+
+});
+//endpoint for dropping a course
+app.post('/addDroppedCourse', isAuth, async function(req, res){
+  
+  const courseId = req.body.courseId;
+  const reason = req.body.reason;
+  const studentId = req.username;
+
+  try{
+    const connection = await getDBConnection();
+    //check if the student is enrolled first
+    let query = "SELECT * FROM enrolled WHERE enrolled.student_id = ? AND enrolled.course_id = ?;";
+    const enrolledCourses = await connection.all(query, [studentId, courseId]);
+
+    if(enrolledCourses.length > 0){ //student is enrolled 
+      //Let's remove them from the enrolled table...
+      query = "DELETE FROM enrolled WHERE enrolled.student_id = ? AND enrolled.course_id = ?;";
+      await connection.all(query,[studentId, courseId]);
+
+      //..verify they haven't already dropped this course in the past
+      query = "SELECT * FROM dropped WHERE dropped.student_id = ? AND dropped.course_id = ?;";
+      const droppedCourses = await connection.all(query,[studentId, courseId]);
+
+      if(droppedCourses.length == 0){
+        //finally add them to the dropped table
+        query = "INSERT INTO dropped (student_id, course_id, reason) VALUES(?,?,?);";
+        await connection.all(query,[studentId, courseId, reason]);
+        console.log("added to dropped table")
+      }
+
+      res.json({
+        "response" : DROPPED_COURSE + courseId,
+        "reason" : reason
+      });
+    }
+    else{//student wasn't enrolled
+      res.json({"response" : NOT_ENROLLED});
+    }
+    await connection.close();
+
+  }catch(err){
+    console.log(err)
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
+
+});
 
 //Retrieve course list (all courses ever)
 app.get('/GetEntireCourseList', isAuth, async function(req, res) {
