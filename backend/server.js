@@ -156,7 +156,6 @@ app.get('/searchCourses', async function(req, res){
     await connection.close();
 
     res.json(output);
-
   }catch(err){
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
