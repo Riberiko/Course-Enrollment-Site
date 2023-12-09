@@ -35,57 +35,24 @@ app.use((req, res, next) => {
   next();
 });
 
-async function isAuth(req, res, next){
-
-  const sessionid = req.cookies['sessionid']
-  const type = req.cookies['user_type']
-  const username = req.cookies['username']
-
-  if (!(sessionid && type && username))
-  {
-    res.clearCookie('sessionid')
-    res.clearCookie('user_type')
-    res.clearCookie('username')
-    return res.status(400).send('User not properly LogedIn')
-  }
-
-  if (!(type == 'student_users' || type == 'teacher_users'))
-  {
-    return res.status(400).send('either missing type argument or type is not equal to teacher_users or student_users')
-  }
-
-  const db = await getDBConnection(), lookfor = type.substring(0, type.indexOf('_')+1)+'id'
-
-  const query = `SELECT ${lookfor} FROM ${type} WHERE session_id = ? AND ${lookfor} = ?;`
-  const cookieMatchDB = await db.all(query, [sessionid, username])
-
-  if(!cookieMatchDB.length)
-  {
-    res.clearCookie('sessionid')
-    res.clearCookie('user_type')
-    res.clearCookie('username')
-    return res.status(400).send('User not properly LogedIn')
-  }
-
-  req.sessionid = cookieMatchDB[0][lookfor]
-  req.user_table = type
-  req.username = username
-  await db.close()
-  next()
-}
+app.listen(PORT, () => {
+  console.log(`Server is running at http://localhost:${PORT}`);
+});
 
 //base server check
 app.post('/isAuth', isAuth, (req, res) => {
   res.send('user isAuthenticated');
 });
 
+//TODO: make endpoints for adding enrolled and dropped classes
+
 //Retrieve course list (all courses ever)
-app.get('/GetEntireCourseList', async function(req, res) {
+app.get('/GetEntireCourseList', isAuth, async function(req, res) {
 
   try {
     const connection = await getDBConnection();
-    const courses = await db.all('SELECT * FROM courses ORDER BY code_type;');
-    await db.close();
+    const courses = await connection.all('SELECT * FROM courses ORDER BY code_type;');
+    await connection.close();
     res.json(courses);
   } catch (err) {
     res.type('text');
@@ -95,7 +62,7 @@ app.get('/GetEntireCourseList', async function(req, res) {
 });
 
 //Retrieve course list (currently active courses)
-app.get('/GetActiveCourseList', async function(req, res) {
+app.get('/GetActiveCourseList', isAuth, async function(req, res) {
 
   try {
     
@@ -115,7 +82,7 @@ app.get('/GetActiveCourseList', async function(req, res) {
 });
 
 //Retreive student info by id number
-app.get('/getStudentById', async function(req, res){
+app.get('/getStudentById', isAuth, async function(req, res){
 
   const studentId = req.body.studentId;
 
@@ -141,7 +108,7 @@ app.get('/getStudentById', async function(req, res){
 });
 
 //Retrieve courses by course type, number and season
-app.get('/searchCourses', async function(req, res){
+app.get('/searchCourses', isAuth, async function(req, res){
 
   const type = `%${req.body.courseType}%`;
   const number = `%${req.body.courseNum}%`;
@@ -163,7 +130,7 @@ app.get('/searchCourses', async function(req, res){
 });
 
 //Retrieve individual course information, preqs and instructor info
-app.get('/getCourseInfo', async function(req, res){
+app.get('/getCourseInfo', isAuth, async function(req, res){
 
   const courseId = req.body.courseId;
 
@@ -193,43 +160,6 @@ app.get('/getCourseInfo', async function(req, res){
 });
 
 
-//check if the username and password are valid
-app.get('/checkUserCreds', async function(req, res) {
-
-  const userid = req.body.username;
-  const password = req.body.password;
-
-  if (!(userid && password)) {
-    res.status(USER_ERROR).send(USER_ERROR_ENDPOINT_MSG);
-  }
-  else {
-    try {
-      const connection = await getDBConnection();
-      //check the teacher_user table
-      let query = "SELECT teacher_id FROM teacher_users WHERE teacher_id = ? AND password = ?";
-      let result = await connection.all(query, [userid, password]);
-      //check the student_users table
-      query = "SELECT student_id FROM student_users WHERE student_id = ? AND password = ?";
-      result.push(await connection.all(query, [userid,password]));
-      if (result.length == 0) {
-        res.status(USER_ERROR).send(USER_ERROR_NO_USER_MSG);
-      }
-      else {
-        const userFound = {"validCredentials" : "True"};
-        res.status(USER_ERROR).json(userFound);
-      }
-    } catch (err) {
-      res.status(SERVER_ERROR).send(SERVER_ERROR_MSG);
-    }
-    if(connection) await connection.close()
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
-});
-
-
 app.post('/login', async (req, res) => {
   const { username, password, type } = req.body
 
@@ -243,7 +173,6 @@ app.post('/login', async (req, res) => {
   {
     return res.status(400).send('either missing type argument or type is not equal to teacher_users or student_users')
   }
-
 
   const db = await getDBConnection(), lookfor = type.substring(0, type.indexOf('_')+1)+'id'
   let query = `SELECT ${lookfor} FROM ${type} WHERE ${lookfor} = ? AND password = ?;`
@@ -313,4 +242,43 @@ async function getSessionId(type) {
   } while (((await db.all(query, id)).length) > 0);
   await db.close();
   return id;
+}
+
+async function isAuth(req, res, next){
+
+  const sessionid = req.cookies['sessionid']
+  const type = req.cookies['user_type']
+  const username = req.cookies['username']
+
+  if (!(sessionid && type && username))
+  {
+    res.clearCookie('sessionid')
+    res.clearCookie('user_type')
+    res.clearCookie('username')
+    return res.status(400).send('User not properly LogedIn')
+  }
+
+  if (!(type == 'student_users' || type == 'teacher_users'))
+  {
+    return res.status(400).send('either missing type argument or type is not equal to teacher_users or student_users')
+  }
+
+  const db = await getDBConnection(), lookfor = type.substring(0, type.indexOf('_')+1)+'id'
+
+  const query = `SELECT ${lookfor} FROM ${type} WHERE session_id = ? AND ${lookfor} = ?;`
+  const cookieMatchDB = await db.all(query, [sessionid, username])
+
+  if(!cookieMatchDB.length)
+  {
+    res.clearCookie('sessionid')
+    res.clearCookie('user_type')
+    res.clearCookie('username')
+    return res.status(400).send('User not properly LogedIn')
+  }
+
+  req.sessionid = cookieMatchDB[0][lookfor]
+  req.user_table = type
+  req.username = username
+  await db.close()
+  next()
 }
