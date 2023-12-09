@@ -21,7 +21,7 @@ const USER_ERROR = 400;
 const USER_ERROR_ENDPOINT_MSG = "Invalid endpoint or parameters."
 const USER_ERROR_NO_USER_MSG = "No userID or password for that entry."
 const SERVER_ERROR = 500;
-const SERVER_ERROR_MSG = "Unable to retrieve from the database:"
+const SERVER_ERROR_MSG = "Unable to retrieve from the database: "
 const DBNAME_MAIN = "main"
 
 app.use(express.urlencoded({ extended: true }));
@@ -74,7 +74,7 @@ async function isAuth(req, res, next){
   next()
 }
 
-  //base server check
+//base server check
 app.post('/isAuth', isAuth, (req, res) => {
   res.send('user isAuthenticated');
 });
@@ -83,7 +83,7 @@ app.post('/isAuth', isAuth, (req, res) => {
 app.get('/GetEntireCourseList', async function(req, res) {
 
   try {
-    const db = await getDBConnection();
+    const connection = await getDBConnection();
     const courses = await db.all('SELECT * FROM courses ORDER BY code_type;');
     await db.close();
     res.json(courses);
@@ -93,13 +93,18 @@ app.get('/GetEntireCourseList', async function(req, res) {
   }
   if(db) await db.close();
 });
+
 //Retrieve course list (currently active courses)
 app.get('/GetActiveCourseList', async function(req, res) {
 
   try {
-    const db = await getDBConnection();
-    const courses = await db.all('SELECT * FROM derived_courses JOIN courses ON courses.id = derived_courses.course_id AND derived_courses.is_active = TRUE;');
-    await db.close();
+    
+    const connection = await getDBConnection();
+    const query = 'SELECT * FROM derived_courses JOIN courses ON courses.id = derived_courses.course_id AND derived_courses.is_active = TRUE;';
+    const courses = await connection.all(query);
+    
+    await connection.close();
+    
     res.json(courses);
   } catch (err) {
     console.log(err)
@@ -108,7 +113,32 @@ app.get('/GetActiveCourseList', async function(req, res) {
   }
   if(db) await db.close()
 });
-//TODO: add a /getuserbyID endpoint for riko
+
+//Retreive student info by id number
+app.get('/getStudentById', async function(req, res){
+
+  const studentId = req.body.studentId;
+
+  if(!studentId){
+    res.status(USER_ERROR).send(USER_ERROR_ENDPOINT_MSG);
+  }
+  else{
+    try{
+      const connection = await getDBConnection();
+      const query = 'SELECT * FROM person JOIN students ON students.id = person.id WHERE students.id = ?;';
+      const studentInfo = await connection.all(query,[studentId]);
+  
+      await connection.close();
+  
+      res.json(studentInfo)
+    }
+    catch(err){
+      console.log(err)
+      res.type('text');
+      res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+    }
+  }
+});
 
 //Retrieve courses by course type, number and season
 app.get('/searchCourses', async function(req, res){
@@ -119,18 +149,15 @@ app.get('/searchCourses', async function(req, res){
 
   try{
     const connection = await getDBConnection();
-    console.log(type, number, season)
     const query = `SELECT * FROM courses WHERE courses.code_type LIKE ? AND courses.code_number LIKE ? AND courses.season LIKE ?`;
     const searchResult = await connection.all(query,[type, number, season]);
     const output = {filteredCourses : searchResult};
-    console.log(searchResult)
 
     await connection.close();
 
     res.json(output);
 
   }catch(err){
-    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
@@ -145,7 +172,6 @@ app.get('/getCourseInfo', async function(req, res){
     res.status(USER_ERROR).send(USER_ERROR_ENDPOINT_MSG);
   }
   else{
-    let connection
     try{
       const connection = await getDBConnection();
       let query = "SELECT courses.code_type, courses.code_number, derived_courses.* FROM derived_courses JOIN courses ON courses.id = derived_courses.course_id WHERE ? = courses.id;";
@@ -178,7 +204,6 @@ app.get('/checkUserCreds', async function(req, res) {
     res.status(USER_ERROR).send(USER_ERROR_ENDPOINT_MSG);
   }
   else {
-    let connection
     try {
       const connection = await getDBConnection();
       //check the teacher_user table
@@ -246,13 +271,17 @@ app.post('/login', async (req, res) => {
 
 app.post('/logout', isAuth, async (req, res) => {
 
-  const db = await getDBConnection()
-  const q = `UPDATE ${req.user_table} SET session_id = NULL WHERE session_id = ?;`
+  try{
+    const db = await getDBConnection()
+    const q = `UPDATE ${req.user_table} SET session_id = NULL WHERE session_id = ?;`
     await db.run(q, [req.sessionid])
     res.clearCookie('sessionid').send('Successfully logged out!')
-
+  }
+  catch(err){
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG);
+  }
   await db.close()
-
 })
 
 /**
