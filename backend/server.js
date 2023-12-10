@@ -467,3 +467,26 @@ app.get('/checkStudentEnrolledCourse', isAuth, async function(req, res){
   }
 
 });
+
+
+//get list of classes the student is waiting on
+app.get('/getWaitingClasses', isAuth, async function(req, res){
+
+  const studentId = req.body.studentId;
+
+  try{
+    const connection = await getDBConnection();
+  
+    let query = "SELECT * FROM waiting JOIN courses ON waiting.derived_course_id = courses.id JOIN derived_courses ON waiting.derived_course_id = derived_course.course_id WHERE waiting.student_id = ?;";
+    const waitingCourses = await connection.all(query, [studentId]);
+
+    res.json({"response" : waitingCourses});
+    await connection.close();
+
+  }catch(err){
+    console.log(err)
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
+
+});
