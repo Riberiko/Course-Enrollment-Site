@@ -7,7 +7,7 @@ const sqlite3 = require('sqlite3');
 const sqlite = require('sqlite');
 const multer = require('multer');
 const cookieParser = require('cookie-parser');
-
+const uuid = require('uuid');
 const PORT = 8000
 
 app.use(express.urlencoded({ extended: true }));
@@ -75,8 +75,10 @@ app.post('/addEnrolledCourse', isAuth, async function(req, res){
     if(completedCourse.length > 0 && enrolledCourse.length == 0){ //user completed the prereq and isn't already enrolled.
       query = "INSERT INTO enrolled (student_id, course_id) VALUES (?,?)";
       await connection.all(query,[studentId, courseId]);
-      
-      res.json({"response" : ENROLLED_IN_COURSE});
+    
+      let confirmationNumber = uuid.v4();
+      res.json({"response" : ENROLLED_IN_COURSE,
+                "confirmationNumber" : confirmationNumber});
     }
     else if(enrolledCourse.length > 0){ //student already enrolled
       res.json({"response": ALREADY_ENROLLED});
