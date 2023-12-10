@@ -375,3 +375,50 @@ async function isAuth(req, res, next){
   await db.close()
   next()
 }
+
+
+//get currently enrolled courses
+app.post('/getEnrolledCourses', isAuth, async function(req, res){
+  
+  const studentId = req.username;
+
+  try{
+    const connection = await getDBConnection();
+    //check if the student is enrolled first
+    let query = "SELECT * FROM enrolled JOIN courses ON enrolled.course_id = courses.id JOIN derived_courses ON courses.id = derived_courses.course_id WHERE enrolled.student_id = ?";
+    const enrolledCourses = await connection.all(query, [studentId]);
+
+      res.json({"response" : enrolledCourses});
+
+    await connection.close();
+
+  }catch(err){
+    console.log(err)
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
+
+});
+
+//get Dropped courses
+app.post('/getDroppedCourses', isAuth, async function(req, res){
+  
+  const studentId = req.username;
+
+  try{
+    const connection = await getDBConnection();
+    //check if the student is enrolled first
+    let query = "SELECT * FROM dropped JOIN courses ON dropped.course_id = courses.id JOIN derived_courses ON courses.id = derived_courses.course_id WHERE enrolled.student_id = ?";
+    const droppedCourses = await connection.all(query, [studentId]);
+
+      res.json({"response" : droppedCourses});
+
+    await connection.close();
+
+  }catch(err){
+    console.log(err)
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
+
+});
