@@ -29,6 +29,16 @@ article{
     overflow-y: scroll;
 }
 
+section{
+    width: 100%;
+    text-align: center;
+    overflow-y: scroll;
+}
+
+.height100{
+    height: 100%;
+}
+
 .courseItem {
     padding: 0.1rem;
     margin: 5px;
@@ -45,6 +55,7 @@ article{
 
 .courseItem p{
     width: 100%;
+    height: 100%;
     overflow-x: scroll;
 }
 
@@ -98,4 +109,10 @@ article{
 
 .list{
     width: 100% !important;
+}
+
+.flex{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
 }

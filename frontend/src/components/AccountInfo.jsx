@@ -1,9 +1,22 @@
 import { useEffect, useState } from "react"
 import { statusCheck } from "../helper"
+import ClassItem from "./ClassItem"
 
 export default () => {
 
     const [data, setData] = useState()
+
+    const [enrolled, setEnrolled] = useState()
+    const [dropped, setDropped] = useState()
+    const [waiting, setWaiting] = useState()
+
+    const [refresh, setRefresh] = useState()
+
+
+    function triggerRefrsh()
+    {
+        setRefresh(!refresh)
+    }
 
     useEffect(()=>{
         fetch('http://localhost:8000/getStudentById',{
@@ -11,10 +24,21 @@ export default () => {
         })
         .then(res => statusCheck(res))
         .then(data => setData(data[0]))
-    }, [])
+        .catch(err => console.log(err))
+
+        fetch('http://localhost:8000/getEnrolledCourses', {'credentials' : 'include'})
+        .then(res => statusCheck(res))
+        .then(data => setEnrolled(data.response))
+        .catch(err => console.log(err))
+
+        fetch('http://localhost:8000/getDroppedCourses', {'credentials' : 'include'})
+        .then(res => statusCheck(res))
+        .then(data => setDropped(data.response))
+        .catch(err => console.log(err))
+    }, [refresh])
 
     return(
-        data ? 
+        (data && enrolled && dropped) ? 
         <>
             <section>
                 <img src="" alt="" />
@@ -25,9 +49,15 @@ export default () => {
             </section>
             <section>
                 <h2>Current Enrolled Classes</h2>
+                <div className="flex">
+                    {enrolled.length == 0 ? <p>No Enrolled classes</p> : enrolled.map((item, index) => <ClassItem refresh={triggerRefrsh} layout={true} data={item}/>)}
+                </div>
             </section>
-            <section>
+            <section className="height100">
                 <h2>Current Dropped Classes</h2>
+                <div className="flex">
+                    {dropped.length == 0 ? <p>No Dropped classes</p> : dropped.map((item, index) => <ClassItem refresh={triggerRefrsh} layout={true} data={item}/>)}
+                </div>
             </section>
         </> : <>Loading User data</>
     )

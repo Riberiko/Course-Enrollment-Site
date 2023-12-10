@@ -49,7 +49,7 @@ const AuthChecker = ({ children }) => {
     else {
         return (
             <>
-                <h1>Unable to validate session, redirected to login page in {time}(s)</h1>
+                <p>Unable to validate session, redirected to login page in {time}(s)</p>
             </>
         );
     }
