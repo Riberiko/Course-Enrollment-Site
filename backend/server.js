@@ -50,7 +50,7 @@ app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
 
-//base server check
+//base server check for testing. not a real endpoint
 app.post('/isAuth', isAuth, (req, res) => {
   res.send('user isAuthenticated');
 });
@@ -336,12 +336,13 @@ app.post('/logout', isAuth, async (req, res) => {
     const q = `UPDATE ${req.user_table} SET session_id = NULL WHERE session_id = ?;`
     await db.run(q, [req.sessionid])
     res.clearCookie('sessionid').send('Successfully logged out!')
+    await db.close()
   }
   catch(err){
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG);
   }
-  await db.close()
+  
 })
 
 /**
