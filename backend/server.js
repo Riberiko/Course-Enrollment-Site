@@ -419,3 +419,51 @@ app.post('/getDroppedCourses', isAuth, async function(req, res){
   }
 
 });
+
+//Retrieve course list (currently active courses)
+app.get('/GetActiveCourseList', isAuth, async function(req, res) {
+
+  try {
+    
+    const connection = await getDBConnection();
+    const query = 'SELECT * FROM derived_courses JOIN courses ON courses.id = derived_courses.course_id AND derived_courses.is_active = TRUE;';
+    const courses = await connection.all(query);
+    
+    await connection.close();
+    
+    res.json(courses);
+  } catch (err) {
+    console.log(err)
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
+  if(db) await db.close()
+});
+
+//Check if a student is enrolled in a class
+app.get('/checkStudentEnrolledCourse', isAuth, async function(req, res){
+
+  const studentId = req.body.studentId;
+  const courseId = req.body.courseId;
+
+  try{
+    const connection = await getDBConnection();
+  
+    let query = "SELECT * FROM enrolled WHERE enrolled.student_id = ? AND enrolled.course_id = ?;";
+    const enrolledCourse = await connection.all(query, [studentId, courseId]);
+
+    if(enrolledCourse.length > 0){ //student is enrolled 
+      res.json({"response" : "true"});
+    }
+    else{//student wasn't enrolled
+      res.json({"response" : "false"});
+    }
+    await connection.close();
+
+  }catch(err){
+    console.log(err)
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
+
+});
