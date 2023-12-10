@@ -1,11 +1,26 @@
+import { useEffect, useState } from "react"
+import { statusCheck } from "../helper"
+
 export default () => {
+
+    const [data, setData] = useState()
+
+    useEffect(()=>{
+        fetch('http://localhost:8000/getStudentById',{
+            'credentials':'include'
+        })
+        .then(res => statusCheck(res))
+        .then(data => setData(data[0]))
+    }, [])
+
     return(
-        <article>
-            <h1>Account Information</h1>
+        data ? 
+        <>
             <section>
                 <img src="" alt="" />
-                <p>Name: </p>
-                <p>Email: </p>
+                <p>Name: {data.first_name + ' ' + data.middle_name + ' ' + data.last_name}</p>
+                <p>Email: {data.email}</p>
+                <p>Phone #: {data.phone_number}</p>
 
             </section>
             <section>
@@ -14,6 +29,6 @@ export default () => {
             <section>
                 <h2>Current Dropped Classes</h2>
             </section>
-        </article>
+        </> : <>Loading User data</>
     )
 }

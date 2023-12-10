@@ -53,12 +53,14 @@ export default () => {
                     <Link to='transactions'>Transaction History</Link>
                     { isAuth && <Link to='#' onClick={() => handleLogout(navigate)}>Logout</Link>}
                 </nav>
+                <article>
                 <Routes>
                     <Route path="account" element={<Private><AccountInfo /></Private>} />
                     <Route path="registration" element={<Private><Registration /></Private>} />
                     <Route path="transactions" element={<Private><Transaction /></Private>} />
                     <Route path="*" element={<NotFound statusCode={404} message='Page Not Found' />} />
                 </Routes>
+                </article>
             </main>
             </>: <NotFound statusCode={400} message='user Not Authenticated' />
     )
