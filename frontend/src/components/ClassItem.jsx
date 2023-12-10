@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-export default ({data}) => {
+export default ({data, layout}) => {
 
     const [more, setMore] = useState(false)
 
@@ -10,7 +10,7 @@ export default ({data}) => {
     }
 
     return(
-        <div className="courseItem" onClick={() => handleClick()}>
+        <div className={`courseItem ${layout && 'list'}`} onClick={() => handleClick()}>
             <p>
                 Name: {data.description}<br/>
                 Type: {data.code_type}<br/>

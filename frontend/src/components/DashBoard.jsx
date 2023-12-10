@@ -21,7 +21,6 @@ export default () => {
     const navigate = useNavigate()
 
     function handleLogout(navigate){
-        console.log('called')
         fetch('http://localhost:8000/logout', {
             method: "POST",
             credentials: 'include',

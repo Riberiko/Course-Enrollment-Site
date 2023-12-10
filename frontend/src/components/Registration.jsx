@@ -8,6 +8,7 @@ export default () => {
   const [filteredData, setFilteredData] = useState([]);
   const [isLoading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
+  const [layout, setLayout] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,11 +33,11 @@ export default () => {
 
   return (
     <>
-      <CourseSearch items={data} categories={categories} setList={setFilteredData} />
+      <CourseSearch layout={layout} setLayout={setLayout} items={data} categories={categories} setList={setFilteredData} />
       {!isLoading ? (
         <>
           {filteredData.map((item, index) => (
-            <ClassItem key={index} data={item} />
+            <ClassItem key={index} data={item} layout={layout} />
           ))}
         </>
       ) : (

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const SearchBar = ({ items, categories, setList, isTransaction }) => {
+const SearchBar = ({ items, categories, setList, isTransaction, layout, setLayout }) => {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [orderBy, setOrderBy] = useState("default");
@@ -33,24 +33,25 @@ const SearchBar = ({ items, categories, setList, isTransaction }) => {
 
   return (
     <div className="search">
-      <input
-        type="text"
-        placeholder="Search..."
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
-      <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-        {!isTransaction && <option value="all">All Categories</option>}
-        {
-            categories.map(cat => <option value={cat}>{cat}</option>)
-        }
-      </select>
-      <select value={orderBy} onChange={(e) => setOrderBy(e.target.value)}>
-        <option value="default">Default Order</option>
-        <option value="asc">Ascending Order</option>
-        <option value="desc">Descending Order</option>
-      </select>
-      <input type="button" onClick={handleSearch} value='Search' />
+        <label id="toggleview" onClick={() => setLayout(!layout)}>Toggle View</label>
+        <input
+            type="text"
+            placeholder="Search..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+        />
+        <select value={filter} onChange={(e) => setFilter(e.target.value)}>
+            {!isTransaction && <option value="all">All Categories</option>}
+            {
+                categories.map(cat => <option value={cat}>{cat}</option>)
+            }
+        </select>
+        <select value={orderBy} onChange={(e) => setOrderBy(e.target.value)}>
+            <option value="default">Default Order</option>
+            <option value="asc">Ascending Order</option>
+            <option value="desc">Descending Order</option>
+        </select>
+        <input type="button" onClick={handleSearch} value='Search' />
     </div>
   );
 };
