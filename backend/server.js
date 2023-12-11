@@ -381,7 +381,6 @@ app.post('/logout', isAuth, async (req, res) => {
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG);
   }
-  
 })
 
 /**
