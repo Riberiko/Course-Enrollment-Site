@@ -7,7 +7,7 @@ export default ({data, layout, isWaiting, refresh}) => {
 
     const [more, setMore] = useState(false)
     const [isRegisterd, setRegistered] = useState(false)
-    const [isLoading, setLoading] = useState(true)
+    const [moreInfo, setMoreInfo] = useState()
 
     const { showPopup } = useInfoPopup();
 
@@ -23,7 +23,7 @@ export default ({data, layout, isWaiting, refresh}) => {
             body: JSON.stringify({ 'courseId': data.course_id, 'reason':reason})
         }).then(res => statusCheck(res))
         .then(data => {
-            showPopup(data.response + `${!isRegisterd ? ' Confirmation : ' + data.confirmationNumber : ''}`)
+            showPopup(data.response + `${data.confirmationNumber ? ' Confirmation : ' + data.confirmationNumber : ''}`)
             if(refresh) refresh()
         })
         .catch(err => {
@@ -32,7 +32,7 @@ export default ({data, layout, isWaiting, refresh}) => {
     }
 
     useEffect(()=>{
-        !isWaiting && fetch('http://localhost:8000/checkStudentEnrolledCourse', {
+        fetch('http://localhost:8000/checkStudentEnrolledCourse', {
             method: 'post',
             credentials: 'include',
             headers: {
@@ -44,14 +44,31 @@ export default ({data, layout, isWaiting, refresh}) => {
         })
         .then(res => statusCheck(res))
         .then(resData => {
-            setLoading(false)
             setRegistered(resData.response)
+        })
+        .catch(err => console.log(err))
+        
+        fetch('http://localhost:8000/getCourseInfo', {
+            method: 'post',
+            credentials: 'include',
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                'courseId': data.course_id
+            })
+        })
+        .then(res => statusCheck(res))
+        .then(resData => {
+            setMoreInfo(resData)
         })
         .catch(err => console.log(err))
     }, [])
 
+    const pre = (moreInfo)?moreInfo.requirementsInfo.map(pre => (pre.code_type+pre.code_number + ' '))[0]:''
+
     return(
-        !isLoading ?
+        data ?
         <div className={`courseItem ${!layout?'list':''}`}>
             <p onClick={() => setMore(!more)}>
                 Name: {data.description}<br/>
@@ -64,7 +81,10 @@ export default ({data, layout, isWaiting, refresh}) => {
                 {
                     more &&
                     <>
-                        ASS
+                        Location: {data.location}<br/>
+                        Season: {data.season}<br/>
+                        Year: {data.year}<br/>
+                        Pre-req(s): {pre?pre:''}
                     </>
                 }
             </p>

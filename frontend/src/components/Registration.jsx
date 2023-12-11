@@ -10,6 +10,8 @@ export default () => {
   const [categories, setCategories] = useState([]);
   const [layout, setLayout] = useState(true)
 
+  const [reload, setReload] = useState(false)
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -37,7 +39,7 @@ export default () => {
       {!isLoading ? (
         <>
           {filteredData.map((item, index) => (
-            <ClassItem key={index} data={item} layout={layout} />
+            <ClassItem key={index} data={item} layout={layout} refresh={()=>setReload(!reload)} />
           ))}
         </>
       ) : (

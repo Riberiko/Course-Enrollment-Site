@@ -100,7 +100,6 @@ app.post('/addEnrolledCourse', isAuth, async function(req, res){
     query = "SELECT capacity FROM derived_courses WHERE derived_courses.course_id = ?;";
     const courseCapacity = await connection.all(query, [courseId]);
     const courseFull = enrolledCount.length >= courseCapacity[CAPACITY_IDX].capacity;
-    console.log(enrolledCount.length, courseCapacity[CAPACITY_IDX].capacity, courseFull)
     if (courseFull){
 
       //check if the student is already in the wait table
@@ -141,7 +140,6 @@ app.post('/addEnrolledCourse', isAuth, async function(req, res){
     await connection.close();
 
   }catch(err){
-    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
@@ -176,31 +174,35 @@ app.post('/addDroppedCourse', isAuth, async function(req, res){
       query = "SELECT * FROM waiting WHERE derived_course_id = ?;";
       const studentsWaiting = await connection.all(query, [courseId]);
 
-      //get the first student on the waitlist
-      const waitingStudentId = studentsWaiting[0].student_id;
 
-      //remove them from the waitlist
-      query = "DELETE FROM waiting WHERE student_id = ? AND derived_course_id = ?;";
-      await connection.all(query, [waitingStudentId, courseId]);
+      let enrolledConfirmationNumber
+      if(studentsWaiting.length)
+      {
+        //get the first student on the waitlist
+        const waitingStudentId = studentsWaiting[0].student_id;
 
-      //enroll them into the course that was dropped
-      //TODO: Put this block into a separate function if we have time. replace this and the enrolled block
-      //delete the course from the dropped table if they are re-enrolling
-      query = "DELETE FROM dropped WHERE dropped.student_id = ? AND dropped.course_id = ?;";
-      await connection.all(query,[waitingStudentId, courseId]);
+        //remove them from the waitlist
+        query = "DELETE FROM waiting WHERE student_id = ? AND derived_course_id = ?;";
+        await connection.all(query, [waitingStudentId, courseId]);
 
-      //insert the student/course into the enrolled table
-      query = "INSERT INTO enrolled (student_id, course_id) VALUES (?,?)";
-      await connection.all(query,[waitingStudentId, courseId]);
+        //enroll them into the course that was dropped
+        //TODO: Put this block into a separate function if we have time. replace this and the enrolled block
+        //delete the course from the dropped table if they are re-enrolling
+        query = "DELETE FROM dropped WHERE dropped.student_id = ? AND dropped.course_id = ?;";
+        await connection.all(query,[waitingStudentId, courseId]);
 
-      const enrolledConfirmationNumber = await addToHistory(connection, waitingStudentId, courseId, ENROLLED);
-      
+        //insert the student/course into the enrolled table
+        query = "INSERT INTO enrolled (student_id, course_id) VALUES (?,?)";
+        await connection.all(query,[waitingStudentId, courseId]);
+
+        enrolledConfirmationNumber = await addToHistory(connection, waitingStudentId, courseId, ENROLLED);
+      }
       res.json({
         "response" : DROPPED_COURSE + courseId,
         "reason" : reason,
         "droppedConfirmationNumber" : droppedConfirmationNumber,
-        "waitlistId" : waitingStudentId,
-        "enrolledConfirmationNumber" : enrolledConfirmationNumber
+        "waitlistId" : (studentsWaiting.length) ? waitingStudentId:'n/a',
+        "enrolledConfirmationNumber" : (enrolledConfirmationNumber)?enrolledConfirmationNumber:'n/a'
       });
     }
     else{//student wasn't enrolled
@@ -209,7 +211,6 @@ app.post('/addDroppedCourse', isAuth, async function(req, res){
     await connection.close();
 
   }catch(err){
-    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
@@ -257,7 +258,6 @@ app.get('/GetActiveCourseList', isAuth, async function(req, res) {
     
     res.json(courses);
   } catch (err) {
-    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
@@ -278,7 +278,6 @@ app.get('/getStudentById', isAuth, async function(req, res){
     res.json(studentInfo)
   }
   catch(err){
-    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
@@ -307,7 +306,7 @@ app.get('/searchCourses', isAuth, async function(req, res){
 });
 
 //Retrieve individual course information, preqs and instructor info
-app.get('/getCourseInfo', isAuth, async function(req, res){
+app.post('/getCourseInfo', isAuth, async function(req, res){
 
   const courseId = req.body.courseId;
 
@@ -332,7 +331,6 @@ app.get('/getCourseInfo', isAuth, async function(req, res){
       res.type('text');
       res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
     }
-    if(connection) await connection.close()
   }
 });
 
@@ -582,7 +580,6 @@ app.get('/getWaitingClasses', isAuth, async function(req, res){
     await connection.close();
 
   }catch(err){
-    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
