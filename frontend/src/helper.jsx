@@ -1,5 +1,3 @@
-import {useUser} from './userContext'
-
 async function statusCheck(response, errorMessage = 'from backend')
 {
     const contentType = response.headers.get('Content-Type');

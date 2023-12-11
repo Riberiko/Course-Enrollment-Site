@@ -190,7 +190,20 @@ app.get('/GetEntireCourseList', isAuth, async function(req, res) {
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
-  if(db) await db.close();
+});
+
+//Retrieve course list (all courses ever)
+app.get('/GetHistory', isAuth, async function(req, res) {
+
+  try {
+    const connection = await getDBConnection();
+    const courses = await connection.all('SELECT * FROM history WHERE student_id = ?;', [req.username]);
+    await connection.close();
+    res.json(courses);
+  } catch (err) {
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
 });
 
 //Retrieve course list (currently active courses)
@@ -505,12 +518,12 @@ app.post('/checkStudentEnrolledCourse', isAuth, async function(req, res){
 //get list of classes the student is waiting on
 app.get('/getWaitingClasses', isAuth, async function(req, res){
 
-  const studentId = req.body.studentId;
+  const studentId = req.username;
 
   try{
     const connection = await getDBConnection();
   
-    let query = "SELECT * FROM waiting JOIN courses ON waiting.derived_course_id = courses.id JOIN derived_courses ON waiting.derived_course_id = derived_course.course_id WHERE waiting.student_id = ?;";
+    let query = "SELECT * FROM waiting WHERE student_id = ?;";
     const waitingCourses = await connection.all(query, [studentId]);
 
     res.json({"response" : waitingCourses});

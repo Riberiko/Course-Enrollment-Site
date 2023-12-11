@@ -169,7 +169,7 @@ CREATE TABLE IF NOT EXISTS student_users (
 CREATE TABLE IF NOT EXISTS history(
 	student_id INTEGER NOT NULL, --Cannot be primary or unique. Need to support multiple entries of the same student
 	course_id INTEGER NOT NULL,
-	confirmation_number INTEGER NOT NULL PRIMARY KEY,
+	confirmation_number VARCHAR(255) NOT NULL PRIMARY KEY,
 	date_time DATE NOT NULL,
 	action_type VARCHAR(255)
 );

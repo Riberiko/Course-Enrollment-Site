@@ -43,7 +43,7 @@ const SearchBar = ({ items, categories, setList, isTransaction, layout, setLayou
         <select value={filter} onChange={(e) => setFilter(e.target.value)}>
             {!isTransaction && <option value="all">All Categories</option>}
             {
-                categories.map(cat => <option value={cat}>{cat}</option>)
+                categories.map((cat, id) => <option key={id} value={cat}>{cat}</option>)
             }
         </select>
         <select value={orderBy} onChange={(e) => setOrderBy(e.target.value)}>

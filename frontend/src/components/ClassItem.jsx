@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react"
 import { statusCheck } from "../helper"
 
+import { useInfoPopup } from '../messageContext';
+
 export default ({data, layout, isWaiting, refresh}) => {
 
     const [more, setMore] = useState(false)
     const [isRegisterd, setRegistered] = useState(false)
     const [isLoading, setLoading] = useState(true)
+
+    const { showPopup } = useInfoPopup();
 
     function handleClick(isRegisterd, setRegistered, refresh, reason='n/a')
     {
@@ -19,12 +23,12 @@ export default ({data, layout, isWaiting, refresh}) => {
             body: JSON.stringify({ 'courseId': data.course_id, 'reason':reason})
         }).then(res => statusCheck(res))
         .then(data => {
-            console.log(data)
-            setRegistered(!isRegisterd)
-            console.log(refresh)
+            showPopup(data.response + `${!isRegisterd ? ' Confirmation : ' + data.confirmationNumber : ''}`)
             if(refresh) refresh()
         })
-        .catch(err => console.log(err))
+        .catch(err => {
+            showPopup(err.message, false)
+        })
     }
 
     useEffect(()=>{

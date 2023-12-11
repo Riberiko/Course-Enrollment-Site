@@ -35,10 +35,15 @@ export default () => {
         .then(res => statusCheck(res))
         .then(data => setDropped(data.response))
         .catch(err => console.log(err))
+
+        fetch('http://localhost:8000/getWaitingClasses', {'credentials' : 'include'})
+        .then(res => statusCheck(res))
+        .then(data => setWaiting(data.response))
+        .catch(err => console.log(err))
     }, [refresh])
 
     return(
-        (data && enrolled && dropped) ? 
+        (data && enrolled && dropped && waiting) ? 
         <>
             <section>
                 <img src="" alt="" />
@@ -50,13 +55,19 @@ export default () => {
             <section>
                 <h2>Current Enrolled Classes</h2>
                 <div className="flex">
-                    {enrolled.length == 0 ? <p>No Enrolled classes</p> : enrolled.map((item, index) => <ClassItem refresh={triggerRefrsh} layout={true} data={item}/>)}
+                    {enrolled.length == 0 ? <p>No Enrolled classes</p> : enrolled.map((item, index) => <ClassItem key={index} refresh={triggerRefrsh} layout={true} data={item}/>)}
                 </div>
             </section>
-            <section className="height100">
+            <section>
                 <h2>Current Dropped Classes</h2>
                 <div className="flex">
-                    {dropped.length == 0 ? <p>No Dropped classes</p> : dropped.map((item, index) => <ClassItem refresh={triggerRefrsh} layout={true} data={item}/>)}
+                    {dropped.length == 0 ? <p>No Dropped classes</p> : dropped.map((item, index) => <ClassItem key={index} refresh={triggerRefrsh} layout={true} data={item}/>)}
+                </div>
+            </section>
+            <section>
+                <h2>Current Wait Listed Classes</h2>
+                <div className="flex">
+                    {waiting.length == 0 ? <p>No Wait Listed classes</p> : waiting.map((item, index) => <ClassItem key={index} isWaiting={true} layout={true} data={item}/>)}
                 </div>
             </section>
         </> : <>Loading User data</>
