@@ -8,6 +8,8 @@ import '../assets/css/header.css'
 import { isAuthF, statusCheck } from "../helper"
 import { useEffect, useState } from "react"
 
+import { InfoPopupProvider } from "../messageContext"
+
 function Header(){
     return(
         <header>
@@ -36,10 +38,7 @@ export default () => {
     const [isAuth, setAuth] = useState()
 
     useEffect(()=>{
-        (async()=>{
-            const isAuthCheck = await isAuthF()
-            setAuth(isAuthCheck)
-        })()
+        isAuthF().then(data => setAuth(data)).catch(err => setAuth(err))
     }, [])
 
     return(
@@ -53,12 +52,14 @@ export default () => {
                     { isAuth && <Link to='#' onClick={() => handleLogout(navigate)}>Logout</Link>}
                 </nav>
                 <article>
-                <Routes>
-                    <Route path="account" element={<Private><AccountInfo /></Private>} />
-                    <Route path="registration" element={<Private><Registration /></Private>} />
-                    <Route path="transactions" element={<Private><Transaction /></Private>} />
-                    <Route path="*" element={<NotFound statusCode={404} message='Page Not Found' />} />
-                </Routes>
+                    <InfoPopupProvider>
+                        <Routes>
+                            <Route path="account" element={<Private><AccountInfo /></Private>} />
+                            <Route path="registration" element={<Private><Registration /></Private>} />
+                            <Route path="transactions" element={<Private><Transaction /></Private>} />
+                            <Route path="*" element={<NotFound statusCode={404} message='Page Not Found' />} />
+                        </Routes>
+                    </InfoPopupProvider>
                 </article>
             </main>
             </>: <NotFound statusCode={400} message='user Not Authenticated' />

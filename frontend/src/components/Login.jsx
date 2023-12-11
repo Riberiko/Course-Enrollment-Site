@@ -3,7 +3,6 @@ import Form from 'react-bootstrap/Form';
 import { Container, Row, Col, Image } from "react-bootstrap";
 import {isAuthF} from '../helper'
 import Button from 'react-bootstrap/Button';
-import image from '../assets/images/building.avif';
 import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -71,11 +70,6 @@ export default () => {
     return (
         !isAuth && 
         <Container>
-            <Row className="justify-content-md-center mt-4">
-                <Col md="auto">
-                    <Image src={image} style={{ width: '400px', height: '260px' }} />
-                </Col>
-            </Row>
             <Row className="justify-content-md-center mt-3">
                 <Col md="auto">
                     <Form>

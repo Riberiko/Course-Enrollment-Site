@@ -228,7 +228,20 @@ app.get('/GetEntireCourseList', isAuth, async function(req, res) {
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
-  if(db) await db.close();
+});
+
+//Retrieve course list (all courses ever)
+app.get('/GetHistory', isAuth, async function(req, res) {
+
+  try {
+    const connection = await getDBConnection();
+    const courses = await connection.all('SELECT * FROM history WHERE student_id = ?;', [req.username]);
+    await connection.close();
+    res.json(courses);
+  } catch (err) {
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
 });
 
 //Retrieve course list (currently active courses)
@@ -464,7 +477,7 @@ async function addToHistory( connection, studentId, courseId, action_type){
 }
 
 //get currently enrolled courses
-app.post('/getEnrolledCourses', isAuth, async function(req, res){
+app.get('/getEnrolledCourses', isAuth, async function(req, res){
   
   const studentId = req.username;
 
@@ -479,7 +492,6 @@ app.post('/getEnrolledCourses', isAuth, async function(req, res){
     await connection.close();
 
   }catch(err){
-    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
@@ -487,14 +499,14 @@ app.post('/getEnrolledCourses', isAuth, async function(req, res){
 });
 
 //get Dropped courses
-app.post('/getDroppedCourses', isAuth, async function(req, res){
+app.get('/getDroppedCourses', isAuth, async function(req, res){
   
   const studentId = req.username;
 
   try{
     const connection = await getDBConnection();
     //check if the student is enrolled first
-    let query = "SELECT * FROM dropped JOIN courses ON dropped.course_id = courses.id JOIN derived_courses ON courses.id = derived_courses.course_id WHERE enrolled.student_id = ?";
+    let query = "SELECT * FROM dropped JOIN courses ON dropped.course_id = courses.id JOIN derived_courses ON courses.id = derived_courses.course_id WHERE dropped.student_id = ?";
     const droppedCourses = await connection.all(query, [studentId]);
 
       res.json({"response" : droppedCourses});
@@ -502,7 +514,6 @@ app.post('/getDroppedCourses', isAuth, async function(req, res){
     await connection.close();
 
   }catch(err){
-    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
@@ -522,7 +533,6 @@ app.get('/GetActiveCourseList', isAuth, async function(req, res) {
     
     res.json(courses);
   } catch (err) {
-    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
@@ -530,9 +540,9 @@ app.get('/GetActiveCourseList', isAuth, async function(req, res) {
 });
 
 //Check if a student is enrolled in a class
-app.get('/checkStudentEnrolledCourse', isAuth, async function(req, res){
+app.post('/checkStudentEnrolledCourse', isAuth, async function(req, res){
 
-  const studentId = req.body.studentId;
+  const studentId = req.username;
   const courseId = req.body.courseId;
 
   try{
@@ -542,15 +552,14 @@ app.get('/checkStudentEnrolledCourse', isAuth, async function(req, res){
     const enrolledCourse = await connection.all(query, [studentId, courseId]);
 
     if(enrolledCourse.length > 0){ //student is enrolled 
-      res.json({"response" : "true"});
+      res.json({"response" : true});
     }
     else{//student wasn't enrolled
-      res.json({"response" : "false"});
+      res.json({"response" : false});
     }
     await connection.close();
 
   }catch(err){
-    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
@@ -561,12 +570,12 @@ app.get('/checkStudentEnrolledCourse', isAuth, async function(req, res){
 //get list of classes the student is waiting on
 app.get('/getWaitingClasses', isAuth, async function(req, res){
 
-  const studentId = req.body.studentId;
+  const studentId = req.username;
 
   try{
     const connection = await getDBConnection();
   
-    let query = "SELECT * FROM waiting JOIN courses ON waiting.derived_course_id = courses.id JOIN derived_courses ON waiting.derived_course_id = derived_course.course_id WHERE waiting.student_id = ?;";
+    let query = "SELECT * FROM waiting WHERE student_id = ?;";
     const waitingCourses = await connection.all(query, [studentId]);
 
     res.json({"response" : waitingCourses});

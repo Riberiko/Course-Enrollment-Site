@@ -29,6 +29,16 @@ article{
     overflow-y: scroll;
 }
 
+section{
+    width: 100%;
+    text-align: center;
+    overflow-y: scroll;
+}
+
+.height100{
+    min-height: 100%;
+}
+
 .courseItem {
     padding: 0.1rem;
     margin: 5px;
@@ -43,9 +53,24 @@ article{
     position: relative;
 }
 
-.courseItem p{
+.transactionItem{
+    padding: 0.1rem;
+    margin: 5px;
+    background-color: antiquewhite;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid black;
+    border-radius: 2px;
+    min-width: 300px;
+    position: relative;
+}
+
+.courseItem p, .transactionItem p{
     width: 100%;
+    height: 100%;
     overflow-x: scroll;
+    word-wrap: break-word;
 }
 
 .courseItem input{
@@ -98,4 +123,26 @@ article{
 
 .list{
     width: 100% !important;
+}
+
+.flex{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.popup{
+    position: absolute;
+    top: 0;
+    padding: 1rem;
+    z-index: 2;
+    font-size: 2rem;
+}
+
+.good{
+    background-color: green;
+}
+
+.bad{
+    background-color: red;
 }
