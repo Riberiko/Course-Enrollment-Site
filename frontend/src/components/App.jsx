@@ -4,15 +4,6 @@ import DashBoard from './DashBoard'
 import '../assets/css/app.css'
 import { UserProvider } from '../userContext'
 
-function Home(){
-  return(
-    <>
-      Home
-    </>
-  )
-}
-
-
 function App() {
 
   return (

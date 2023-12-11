@@ -195,11 +195,11 @@ app.get('/GetEntireCourseList', isAuth, async function(req, res) {
 
 //Retrieve course list (currently active courses)
 app.get('/GetActiveCourseList', isAuth, async function(req, res) {
-
+  let connection
   try {
     
-    const connection = await getDBConnection();
-    const query = 'SELECT * FROM derived_courses JOIN courses ON courses.id = derived_courses.course_id AND derived_courses.is_active = TRUE;';
+    connection = await getDBConnection();
+    const query = 'SELECT courses.*, derived_courses.*, person.first_name || \' \' || person.last_name AS teacher_name, COUNT(enrolled.student_id) AS enrolled_count FROM derived_courses JOIN courses ON courses.id = derived_courses.course_id AND derived_courses.is_active = TRUE LEFT JOIN enrolled ON enrolled.course_id = courses.id LEFT JOIN person ON person.id = derived_courses.teacher_id GROUP BY courses.id;';
     const courses = await connection.all(query);
     
     await connection.close();
@@ -210,32 +210,26 @@ app.get('/GetActiveCourseList', isAuth, async function(req, res) {
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
-  if(db) await db.close()
 });
 
 //Retreive student info by id number
 app.get('/getStudentById', isAuth, async function(req, res){
 
-  const studentId = req.body.studentId;
+  const studentId = req.username
 
-  if(!studentId){
-    res.status(USER_ERROR).send(USER_ERROR_ENDPOINT_MSG);
+  try{
+    const connection = await getDBConnection();
+    const query = 'SELECT * FROM person JOIN students ON students.id = person.id WHERE students.id = ?;';
+    const studentInfo = await connection.all(query,[studentId]);
+
+    await connection.close();
+
+    res.json(studentInfo)
   }
-  else{
-    try{
-      const connection = await getDBConnection();
-      const query = 'SELECT * FROM person JOIN students ON students.id = person.id WHERE students.id = ?;';
-      const studentInfo = await connection.all(query,[studentId]);
-  
-      await connection.close();
-  
-      res.json(studentInfo)
-    }
-    catch(err){
-      console.log(err)
-      res.type('text');
-      res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
-    }
+  catch(err){
+    console.log(err)
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
 });
 
@@ -331,8 +325,9 @@ app.post('/login', async (req, res) => {
 
 app.post('/logout', isAuth, async (req, res) => {
 
+  let db
   try{
-    const db = await getDBConnection()
+    db = await getDBConnection()
     const q = `UPDATE ${req.user_table} SET session_id = NULL WHERE session_id = ?;`
     await db.run(q, [req.sessionid])
     res.clearCookie('sessionid').send('Successfully logged out!')
@@ -341,8 +336,8 @@ app.post('/logout', isAuth, async (req, res) => {
   catch(err){
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG);
+    await db.close()
   }
-  
 })
 
 /**
@@ -501,6 +496,29 @@ app.get('/checkStudentEnrolledCourse', isAuth, async function(req, res){
     else{//student wasn't enrolled
       res.json({"response" : "false"});
     }
+    await connection.close();
+
+  }catch(err){
+    console.log(err)
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
+
+});
+
+
+//get list of classes the student is waiting on
+app.get('/getWaitingClasses', isAuth, async function(req, res){
+
+  const studentId = req.body.studentId;
+
+  try{
+    const connection = await getDBConnection();
+  
+    let query = "SELECT * FROM waiting JOIN courses ON waiting.derived_course_id = courses.id JOIN derived_courses ON waiting.derived_course_id = derived_course.course_id WHERE waiting.student_id = ?;";
+    const waitingCourses = await connection.all(query, [studentId]);
+
+    res.json({"response" : waitingCourses});
     await connection.close();
 
   }catch(err){

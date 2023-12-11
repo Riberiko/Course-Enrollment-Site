@@ -1,55 +1,48 @@
-import React from 'react';
-import { Row, Col, Container, Form, Button } from 'react-bootstrap';
-import CardStyle from './CardStyle';
-import image from '../assets/images/Biology.jpeg';
-import image2 from '../assets/images/Math.jpeg';
-import image3 from '../assets/images/English.jpeg';
-import image4 from '../assets/images/History.jpeg';
-
-const style = {
-    background: "linear-gradient(200deg, #173753, #1B4353, #2892D7)",
-    width: "100%",
-    height: "90%",
-    overflow: "auto"
-};
+import { useEffect, useState } from "react";
+import { statusCheck } from "../helper";
+import CourseSearch from "./CourseSearch";
+import ClassItem from "./ClassItem";
 
 export default () => {
-    return (
-        <body style={style}>
-            <Container>
+  const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [isLoading, setLoading] = useState(true);
+  const [categories, setCategories] = useState([]);
+  const [layout, setLayout] = useState(true)
 
-                <Row className="justify-content-md-center mb-4">
-                    <Col md={8}>
-                        <Form className="d-flex">
-                            <Form.Control
-                                type="search"
-                                placeholder="Search"
-                                className="me-2"
-                                aria-label="Search"
-                            />
-                            <Button variant="outline-success">Search</Button>
-                        </Form>
-                    </Col>
-                </Row>
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/GetActiveCourseList', {
+          credentials: 'include'
+        });
 
+        const responseData = await statusCheck(res);
+        setData(responseData);
+        setFilteredData(responseData)
+        setLoading(false);
 
-                <Row className="justify-content-md-center mb-2"> 
-                    <Col md={6} style={{padding:'10px'}}>
-                        <CardStyle imageSrc={image} cardTitle={"Biology"} />
-                    </Col>
-                    <Col md={6} style={{padding:'10px'}}>
-                        <CardStyle imageSrc={image2} cardTitle={"Math"} />
-                    </Col>
-                </Row>
-                <Row className="justify-content-md-center"> 
-                    <Col md={6}>
-                        <CardStyle imageSrc={image3} cardTitle={"English"} />
-                    </Col>
-                    <Col md={6}>
-                        <CardStyle imageSrc={image4} cardTitle={"History"}/>
-                    </Col>
-                </Row>
-            </Container>
-        </body>
-    );
+        setCategories([...new Set(responseData.map(item => item.code_type))])
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  return (
+    <>
+      <CourseSearch layout={layout} setLayout={setLayout} items={data} categories={categories} setList={setFilteredData} />
+      {!isLoading ? (
+        <>
+          {filteredData.map((item, index) => (
+            <ClassItem key={index} data={item} layout={layout} />
+          ))}
+        </>
+      ) : (
+        <>Loading the courses</>
+      )}
+    </>
+  );
 };

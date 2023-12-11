@@ -5,7 +5,7 @@ async function statusCheck(response, errorMessage = 'from backend')
     const contentType = response.headers.get('Content-Type');
     const message = (contentType.includes('text')) ? await response.text() : await response.json()
     if(!response.ok) throw Error('[Error] : '+ message)
-    return response
+    return message
 }
 
 async function isAuthF()
