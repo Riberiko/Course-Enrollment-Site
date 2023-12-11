@@ -17,7 +17,9 @@ app.use(cookieParser());
 
 //CONSTANTS
 const PREREQ_IDX = 0;
+const CAPACITY_IDX = 0;
 const ENROLLED = "Enrolled";
+const WAITLISTED = "Waiting";
 const DROPPED = "Dropped";
 
 //ERRORS
@@ -34,6 +36,8 @@ const ENROLLED_IN_COURSE = "You have been successfully enrolled in the course"
 const ALREADY_ENROLLED = "Already enrolled into this course."
 const NOT_ENROLLED = "Not enrolled in that course."
 const DROPPED_COURSE = "You have successfully dropped: "
+const AT_CAPACITY = "This course is at capacity. Adding student to waitlist";
+const ALREADY_WAITING = "You are already on the waitlist for this course.";
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -63,59 +67,79 @@ app.post('/addEnrolledCourse', isAuth, async function(req, res){
 
   try{
     const connection = await getDBConnection();
+
+    //check to see if the student is already enrolled
+    let query = "SELECT * FROM enrolled WHERE enrolled.student_id = ? AND enrolled.course_id = ?;";
+    const enrolledCourse = await connection.all(query, [studentId, courseId]);
+
+    if(enrolledCourse.length > 0){
+      res.json({"response" : ALREADY_ENROLLED});
+    }
     
-    //get the prereq of this course
-    let query = "SELECT course_requirements.pre_req_id FROM course_requirements JOIN courses ON course_requirements.course_id = ? WHERE courses.id = course_requirements.pre_req_id;";
+    //get the prereq of this course and see if the student has completed them
+    query = "SELECT course_requirements.pre_req_id FROM course_requirements JOIN courses ON course_requirements.course_id = ? WHERE courses.id = course_requirements.pre_req_id;";
     const preReq = await connection.all(query, [courseId]);
-    let completedPreReqs = true;
-    let completedCourse = [];
-    
+    let completedCourse = []
+
     if(preReq.length > 0){//There are prerequisites and we need to make sure the student has completed them
       
       const preReqId = preReq[PREREQ_IDX].pre_req_id;
-      //check to see if the student has completed the prereq yet
+      //see if this prerequisite course is in the student's completed courses records
       query = "SELECT * FROM completed WHERE completed.student_id = ? AND completed.derived_course_id = ?;";
       completedCourse = await connection.all(query, [studentId, preReqId]);
-      console.log(completedCourse.length)
       
-      if (completedCourse.length == 0){
-        completedPreReqs = false;
+      if (completedCourse.length == 0){ // prerequisites not met
+        res.json({"response" : PREREQ_ERROR_PREREQ_NOT_MET});
+      }
+    }
+
+    //check if the course if full
+    query = "SELECT * FROM enrolled WHERE enrolled.course_id = ?;";
+    const enrolledCount = await connection.all(query, [courseId]);
+
+    query = "SELECT capacity FROM derived_courses WHERE derived_courses.course_id = ?;";
+    const courseCapacity = await connection.all(query, [courseId]);
+    const courseFull = enrolledCount.length >= courseCapacity[CAPACITY_IDX].capacity;
+    console.log(enrolledCount.length, courseCapacity[CAPACITY_IDX].capacity, courseFull)
+    if (courseFull){
+
+      //check if the student is already in the wait table
+      query = "SELECT * FROM waiting WHERE student_id = ? AND derived_course_id = ?;";
+      const waitingEntry = await connection.all(query, [studentId, courseId]);
+
+      if(waitingEntry.length > 0){
+        res.json({"response" : ALREADY_WAITING});
+      }
+      else{
+      //add student to the waitlist
+      query = "INSERT INTO waiting (student_id, derived_course_id) VALUES(?, ?);";
+      await connection.all(query, [studentId, courseId]);
+
+      //add entry to transaction table 
+      const confirmationNumber = await addToHistory(connection, studentId, courseId, WAITLISTED);
+
+      res.json({"response" : AT_CAPACITY,
+                "confirmationNumber" : confirmationNumber});
       }
     }
     
-    //check to see if the student is already enrolled
-    query = "SELECT * FROM enrolled WHERE enrolled.student_id = ? AND enrolled.course_id = ?;";
-    const enrolledCourse = await connection.all(query, [studentId, courseId]);
-    
-    if(completedPreReqs && enrolledCourse.length == 0){ //user completed the prereq and isn't already enrolled.
-      
+    //user completed the prereq, isn't already enrolled and the course isn't full
+    if(enrolledCourse.length == 0 && (preReq.length == 0 || completedCourse.length > 0) && !courseFull){
       //delete the course from the dropped table if they are re-enrolling
       query = "DELETE FROM dropped WHERE dropped.student_id = ? AND dropped.course_id = ?;";
       await connection.all(query,[studentId, courseId]);
-      
-      //generate a confirmation number
-      let confirmationNumber = uuid.v4();
 
       //insert the student/course into the enrolled table
       query = "INSERT INTO enrolled (student_id, course_id) VALUES (?,?)";
       await connection.all(query,[studentId, courseId]);
 
-      //insert into the history table but generate a date first since NOW() gets stamped in as a string literal
-      query = "INSERT INTO history (student_id, course_id, confirmation_number, date_time, action_type) VALUES (?,?,?,?,?);";
-      const now = new Date();
-      const formattedNow = now.toISOString().split('T')[0]; //chop off the time info
-      await connection.all(query,[studentId, courseId, confirmationNumber, formattedNow, ENROLLED]);
+      const confirmationNumber = await addToHistory(connection, studentId, courseId, ENROLLED);
 
       res.json({"response" : ENROLLED_IN_COURSE,
                 "confirmationNumber" : confirmationNumber});
     }
-    else if(enrolledCourse.length > 0){ //student already enrolled
-      res.json({"response": ALREADY_ENROLLED});
-    }
-    else if(completedCourse.length == 0){//student didn't complete the prereq yet. return an error
-      res.status(USER_ERROR).send(PREREQ_ERROR_PREREQ_NOT_MET);
-    }
     await connection.close();
+
   }catch(err){
     console.log(err)
     res.type('text');
@@ -141,28 +165,42 @@ app.post('/addDroppedCourse', isAuth, async function(req, res){
       query = "DELETE FROM enrolled WHERE enrolled.student_id = ? AND enrolled.course_id = ?;";
       await connection.all(query,[studentId, courseId]);
 
-      //..verify they haven't already dropped this course in the past
-      query = "SELECT * FROM dropped WHERE dropped.student_id = ? AND dropped.course_id = ?;";
-      const droppedCourses = await connection.all(query,[studentId, courseId]);
+      //add the new entry into the dropped table
+      query = "INSERT INTO dropped (student_id, course_id, reason) VALUES(?,?,?);";
+      await connection.all(query,[studentId, courseId, reason]);
 
-      if(droppedCourses.length == 0){
-        //add them to the dropped table
-        query = "INSERT INTO dropped (student_id, course_id, reason) VALUES(?,?,?);";
-        await connection.all(query,[studentId, courseId, reason]);
+      //add an entry into history
+      const droppedConfirmationNumber = await addToHistory(connection, studentId, courseId, DROPPED);
 
-        //generate a confirmation number
-        let confirmationNumber = uuid.v4();
+      //see if there's another student for this course on the waitlist
+      query = "SELECT * FROM waiting WHERE derived_course_id = ?;";
+      const studentsWaiting = await connection.all(query, [courseId]);
 
-        //finally, add an entry into history
-        query = "INSERT INTO history (student_id, course_id, confirmation_number, date_time, action_type) VALUES (?,?,?,?,?);";
-        const now = new Date();
-        const formattedNow = now.toISOString().split('T')[0]; //chop off the time info
-        await connection.all(query,[studentId, courseId, confirmationNumber, formattedNow, DROPPED]);
-    }
+      //get the first student on the waitlist
+      const waitingStudentId = studentsWaiting[0].student_id;
 
+      //remove them from the waitlist
+      query = "DELETE FROM waiting WHERE student_id = ? AND derived_course_id = ?;";
+      await connection.all(query, [waitingStudentId, courseId]);
+
+      //enroll them into the course that was dropped
+      //TODO: Put this block into a separate function if we have time. replace this and the enrolled block
+      //delete the course from the dropped table if they are re-enrolling
+      query = "DELETE FROM dropped WHERE dropped.student_id = ? AND dropped.course_id = ?;";
+      await connection.all(query,[waitingStudentId, courseId]);
+
+      //insert the student/course into the enrolled table
+      query = "INSERT INTO enrolled (student_id, course_id) VALUES (?,?)";
+      await connection.all(query,[waitingStudentId, courseId]);
+
+      const enrolledConfirmationNumber = await addToHistory(connection, waitingStudentId, courseId, ENROLLED);
+      
       res.json({
         "response" : DROPPED_COURSE + courseId,
-        "reason" : reason
+        "reason" : reason,
+        "droppedConfirmationNumber" : droppedConfirmationNumber,
+        "waitlistId" : waitingStudentId,
+        "enrolledConfirmationNumber" : enrolledConfirmationNumber
       });
     }
     else{//student wasn't enrolled
@@ -416,6 +454,18 @@ async function isAuth(req, res, next){
   next()
 }
 
+async function addToHistory( connection, studentId, courseId, action_type){
+
+  //generate a confirmation number
+  let confirmationNumber = uuid.v4();
+
+  const query = "INSERT INTO history (student_id, course_id, confirmation_number, date_time, action_type) VALUES (?,?,?,?,?);";
+  const now = new Date();
+  const formattedNow = now.toISOString().split('T')[0]; //chop off the time info
+  await connection.all(query,[studentId, courseId, confirmationNumber, formattedNow, action_type]);
+
+  return confirmationNumber;
+}
 
 //get currently enrolled courses
 app.post('/getEnrolledCourses', isAuth, async function(req, res){
