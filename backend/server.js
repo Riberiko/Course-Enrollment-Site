@@ -376,6 +376,7 @@ app.post('/logout', isAuth, async (req, res) => {
     res.clearCookie('sessionid').send('Successfully logged out!')
     await db.close()
   }
+  
   catch(err){
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG);
