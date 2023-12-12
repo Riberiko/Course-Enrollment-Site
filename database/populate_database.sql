@@ -125,3 +125,9 @@ INSERT INTO completed (student_id, derived_course_id, gpa) VALUES
 (3, 5, 4.0),
 (4, 7, 3.75),
 (5, 9, 3.25);
+
+INSERT INTO notifications(person_id, notification) VALUES
+(1, "This is a notification"),
+(1, "Here is another"),
+(2, "This is a notification"),
+(3, "This is a notification");
