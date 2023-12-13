@@ -1,3 +1,9 @@
+/*
+  Name: Rob Tai, Michael Lezon, Riberiko Niyomwungere, David Ortega
+  Date: 12.12.23
+  This is the backend js pages for final project
+*/
+
 'use strict';
 const express = require('express');
 
