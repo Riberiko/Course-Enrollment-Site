@@ -1,6 +1,31 @@
 # *Server.js* API Documentation
 *These API Endpoints provide the client with information about courses, students and transaction data.*
 
+## */getNotifications*
+**Request Format:** */getNotifications*
+
+**Request Type:** *Get*
+
+**Returned Data Format**: *JSON/Text*
+
+**Description:** *an endpoint used to get notifications for the user*
+
+**Example Request:** */getNotifications*
+
+**Example Response:**
+
+```json
+{
+	"response" : "You have been moved from a courses waitlist and automatically enrolled."
+}
+```
+
+**Error Handling:**
+If the user is not logged in
+```
+User not properly LogedIn
+```
+
 ## */addEnrolledCourse*
 **Request Format:** */addEnrolledCourse*
 
@@ -49,7 +74,7 @@ User not properly LogedIn
 
 **Returned Data Format**: JSON/text
 
-**Description:** *Allows the student to drop a course. Course is removed from the enrolled table and a transaction entry is entered in the history table*
+**Description:** *Allows the student to drop a course. Course is removed from the enrolled table and a transaction entry is entered in the history table. Also triggers auto enrollment on students who are on waitlist*
 
 **Example Request:** */addDroppedCourse*
 
@@ -114,6 +139,45 @@ If the user provided invalid kv pairings
 ```
 Unable to retrieve from the database: main
 ```
+If the user is not logged in
+```
+User not properly LogedIn
+```
+
+## */GetHistory*
+**Request Format:** */GetHistory*
+
+**Request Type:** *Get*
+
+**Returned Data Format**: JSON/text
+
+**Description:** *Gets the transaction history for the user (all enrolled, dropped, waitlisted classes)*
+
+**Example Request:** */GetHistory* 
+
+**Example Response:**
+
+```JSON
+[
+	{
+		"student_id": 1,
+		"course_id": 1,
+		"confirmation_number": "47a6d6a6-d40a-464c-b2a4-df52e63229a1",
+		"date_time": "2023-12-12",
+		"action_type": "Dropped"
+	},
+	{
+		"student_id": 1,
+		"course_id": 1,
+		"confirmation_number": "96c42c52-ecea-49fc-81a9-0290fb1f0003",
+		"date_time": "2023-12-12",
+		"action_type": "Enrolled"
+	},
+]
+```
+
+**Error Handling:**
+
 If the user is not logged in
 ```
 User not properly LogedIn
