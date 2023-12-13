@@ -3,11 +3,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 
 function InfoPopup({message, isGood})
 {
-  return(
-    <div className={`popup ${isGood?'good':'bad'}`}>
-    {message}
-    </div>
-  )
+  return <p className={`popup ${isGood ? 'good' : 'bad'}`} dangerouslySetInnerHTML={{ __html: message }} />
 }
 
 // Create a context

@@ -9,6 +9,7 @@ import { isAuthF, statusCheck } from "../helper"
 import { useEffect, useState } from "react"
 
 import { InfoPopupProvider } from "../messageContext"
+import Completed from "./Completed"
 
 function Header(){
     return(
@@ -49,6 +50,7 @@ export default () => {
                     <Link to='account'>My Account</Link>
                     <Link to='registration'>Registration</Link>
                     <Link to='transactions'>Transaction History</Link>
+                    <Link to='completed'>Competed Courses</Link>
                     { isAuth && <Link to='#' onClick={() => handleLogout(navigate)}>Logout</Link>}
                 </nav>
                 <article>
@@ -57,6 +59,7 @@ export default () => {
                             <Route path="account" element={<Private><AccountInfo /></Private>} />
                             <Route path="registration" element={<Private><Registration /></Private>} />
                             <Route path="transactions" element={<Private><Transaction /></Private>} />
+                            <Route path="completed" element={<Private><Completed /></Private>} />
                             <Route path="*" element={<NotFound statusCode={404} message='Page Not Found' />} />
                         </Routes>
                     </InfoPopupProvider>
