@@ -1,3 +1,11 @@
+/*
+  Name: Rob Tai, Michael Lezon, Riberiko Niyomwungere, David Ortega
+  Date: 12.12.23
+  This is the sql commands to create the table schema
+*/
+
+
+
 CREATE TABLE IF NOT EXISTS state (
     code VARCHAR(2) PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE
