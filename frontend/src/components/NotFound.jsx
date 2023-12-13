@@ -1,3 +1,11 @@
+/*
+  Name: Rob Tai, Michael Lezon, Riberiko Niyomwungere, David Ortega
+  Date: 12.12.23
+  This is react js file for page not found
+*/
+
+
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
