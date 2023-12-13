@@ -76,10 +76,12 @@ app.get('/getNotifications', isAuth, async function(req, res){
     await connection.all(query,[userId]);
 
     if (notifications.length > 0){
-      res.json({"response" : notifications});
+      const response = notifications.map(obj => obj.notification+'<br/>').join('')
+      console.log(notifications, response)
+      res.json({"response" : `<p>${response}</p>`});
     }
     else{
-      res.json({"response": NO_NOTIFICATIONS});
+      res.status(403).json({"response": NO_NOTIFICATIONS});
     }
 
     await connection.close();
@@ -93,7 +95,9 @@ app.get('/getNotifications', isAuth, async function(req, res){
 //Endpoint for enrolling in a course
 app.post('/addEnrolledCourse', isAuth, async function(req, res){
   
+  //derived id
   const courseId = req.body.courseId;
+  const derivedId = req.body.derivedId;
   const studentId = req.username;
 
   try{
@@ -101,41 +105,50 @@ app.post('/addEnrolledCourse', isAuth, async function(req, res){
 
     //check to see if the student is already enrolled
     let query = "SELECT * FROM enrolled WHERE enrolled.student_id = ? AND enrolled.course_id = ?;";
-    const enrolledCourse = await connection.all(query, [studentId, courseId]);
+    const enrolledCourse = await connection.all(query, [studentId, derivedId]);
 
     if(enrolledCourse.length > 0){
       res.json({"response" : ALREADY_ENROLLED});
     }else{
 
       //get the prereq of this course and see if the student has completed them
-      query = "SELECT course_requirements.pre_req_id FROM course_requirements JOIN courses ON course_requirements.course_id = ? WHERE courses.id = course_requirements.pre_req_id;";
+      query = "SELECT course_id, gpa_minimum, code_type, code_number FROM course_requirements JOIN courses ON course_requirements.course_id = ? WHERE courses.id = course_requirements.pre_req_id;";
       const preReq = await connection.all(query, [courseId]);
-      let completedCourse = []
 
       if(preReq.length > 0){//There are prerequisites and we need to make sure the student has completed them
         
-        const preReqId = preReq[PREREQ_IDX].pre_req_id;
         //see if this prerequisite course is in the student's completed courses records
-        query = "SELECT * FROM completed WHERE completed.student_id = ? AND completed.derived_course_id = ?;";
-        completedCourse = await connection.all(query, [studentId, preReqId]);
-        
-        if (completedCourse.length == 0){ // prerequisites not met
-          res.json({"response" : PREREQ_ERROR_PREREQ_NOT_MET});
+        query = "SELECT * FROM completed JOIN derived_courses ON completed.derived_course_id = derived_courses.id  WHERE completed.student_id = ?;";
+        const completedCourse = await connection.all(query, [studentId]);
+
+
+        console.log(completedCourse)
+        for (let i = preReq.length - 1; i >= 0; i--) {
+          if (completedCourse.some(completed => completed.course_id === preReq[i].course_id)) {
+            preReq.splice(i, 1);
+          }
         }
+        console.log(preReq)
       }
 
       //check if the course if full
       query = "SELECT * FROM enrolled WHERE enrolled.course_id = ?;";
-      const enrolledCount = await connection.all(query, [courseId]);
+      const enrolledCount = await connection.all(query, [derivedId]);
 
-      query = "SELECT capacity FROM derived_courses WHERE derived_courses.course_id = ?;";
-      const courseCapacity = await connection.all(query, [courseId]);
+      query = "SELECT capacity FROM derived_courses WHERE id = ?;";
+      const courseCapacity = await connection.all(query, [derivedId]);
+      console.log(courseCapacity)
       const courseFull = enrolledCount.length >= courseCapacity[CAPACITY_IDX].capacity;
-      if (courseFull){
+      
+      if(preReq.length)
+      {
+        res.status(403).json({'response': `Please complete these pre req(s) first [${preReq.map(i => i.code_type+i.code_number).join(', ')}]`})
+      }
+      else if (courseFull){
 
         //check if the student is already in the wait table
         query = "SELECT * FROM waiting WHERE student_id = ? AND derived_course_id = ?;";
-        const waitingEntry = await connection.all(query, [studentId, courseId]);
+        const waitingEntry = await connection.all(query, [studentId, derivedId]);
 
         if(waitingEntry.length > 0){
           res.json({"response" : ALREADY_WAITING});
@@ -143,7 +156,7 @@ app.post('/addEnrolledCourse', isAuth, async function(req, res){
         else{
         //add student to the waitlist
         query = "INSERT INTO waiting (student_id, derived_course_id) VALUES(?, ?);";
-        await connection.all(query, [studentId, courseId]);
+        await connection.all(query, [studentId, derivedId]);
 
         //add entry to transaction table 
         const confirmationNumber = await addToHistory(connection, studentId, courseId, WAITLISTED);
@@ -154,14 +167,14 @@ app.post('/addEnrolledCourse', isAuth, async function(req, res){
       }
       
       //user completed the prereq, isn't already enrolled and the course isn't full
-      if(enrolledCourse.length == 0 && (preReq.length == 0 || completedCourse.length > 0) && !courseFull){
+      else{
         //delete the course from the dropped table if they are re-enrolling
         query = "DELETE FROM dropped WHERE dropped.student_id = ? AND dropped.course_id = ?;";
-        await connection.all(query,[studentId, courseId]);
+        await connection.all(query,[studentId, derivedId]);
 
         //insert the student/course into the enrolled table
         query = "INSERT INTO enrolled (student_id, course_id) VALUES (?,?)";
-        await connection.all(query,[studentId, courseId]);
+        await connection.all(query,[studentId, derivedId]);
 
         const confirmationNumber = await addToHistory(connection, studentId, courseId, ENROLLED);
 
@@ -172,6 +185,7 @@ app.post('/addEnrolledCourse', isAuth, async function(req, res){
     await connection.close();
 
   }catch(err){
+    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
@@ -181,6 +195,7 @@ app.post('/addEnrolledCourse', isAuth, async function(req, res){
 app.post('/addDroppedCourse', isAuth, async function(req, res){
   
   const courseId = req.body.courseId;
+  const derivedId = req.body.derivedId;
   const reason = req.body.reason;
   const studentId = req.username;
   
@@ -188,23 +203,23 @@ app.post('/addDroppedCourse', isAuth, async function(req, res){
     const connection = await getDBConnection();
     //check if the student is enrolled first
     let query = "SELECT * FROM enrolled WHERE enrolled.student_id = ? AND enrolled.course_id = ?;";
-    const enrolledCourses = await connection.all(query, [studentId, courseId]);
+    const enrolledCourses = await connection.all(query, [studentId, derivedId]);
 
     if(enrolledCourses.length > 0){ //student is enrolled 
       //Let's remove them from the enrolled table...
       query = "DELETE FROM enrolled WHERE enrolled.student_id = ? AND enrolled.course_id = ?;";
-      await connection.all(query,[studentId, courseId]);
+      await connection.all(query,[studentId, derivedId]);
 
       //add the new entry into the dropped table
       query = "INSERT INTO dropped (student_id, course_id, reason) VALUES(?,?,?);";
-      await connection.all(query,[studentId, courseId, reason]);
+      await connection.all(query,[studentId, derivedId, reason]);
 
       //add an entry into history
       const droppedConfirmationNumber = await addToHistory(connection, studentId, courseId, DROPPED);
 
       //see if there's another student for this course on the waitlist
       query = "SELECT * FROM waiting WHERE derived_course_id = ?;";
-      const studentsWaiting = await connection.all(query, [courseId]);
+      const studentsWaiting = await connection.all(query, [derivedId]);
 
       //local variables for the next part
       let enrolledConfirmationNumber;
@@ -217,26 +232,27 @@ app.post('/addDroppedCourse', isAuth, async function(req, res){
 
         //remove them from the waitlist
         query = "DELETE FROM waiting WHERE student_id = ? AND derived_course_id = ?;";
-        await connection.all(query, [waitingStudentId, courseId]);
+        await connection.all(query, [waitingStudentId, derivedId]);
 
         //enroll them into the course that was dropped
         //TODO: Put this block into a separate function if we have time. replace this and the enrolled block
         //delete the course from the dropped table if they are re-enrolling
         query = "DELETE FROM dropped WHERE dropped.student_id = ? AND dropped.course_id = ?;";
-        await connection.all(query,[waitingStudentId, courseId]);
+        await connection.all(query,[waitingStudentId, derivedId]);
 
         //insert the student/course into the enrolled table
         query = "INSERT INTO enrolled (student_id, course_id) VALUES (?,?);";
-        await connection.all(query,[waitingStudentId, courseId]);
+        await connection.all(query,[waitingStudentId, derivedId]);
 
         enrolledConfirmationNumber = await addToHistory(connection, waitingStudentId, courseId, ENROLLED);
 
         //add a notification so the waitlisted student is notified when they log back in
-        query = "INSERT INTO notifications (person_id, notification) VALUES(?,?);";
+        console.log('wtf')
+        query = "INSERT INTO notifications (person_id, notification) VALUES(?,'?');";
         await connection.all(query, [waitingStudentId, AUTO_ENROLLED]);
       }
       res.json({
-        "response" : DROPPED_COURSE + courseId,
+        "response" : DROPPED_COURSE + derivedId,
         "reason" : reason,
         "droppedConfirmationNumber" : droppedConfirmationNumber,
         "waitlistId" :  (studentsWaiting.length) ? waitingStudentId:'n/a',
@@ -244,11 +260,12 @@ app.post('/addDroppedCourse', isAuth, async function(req, res){
       });
     }
     else{//student wasn't enrolled
-      res.json({"response" : NOT_ENROLLED});
+      res.status(403).json({"response" : NOT_ENROLLED});
     }
     await connection.close();
 
   }catch(err){
+    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
@@ -288,7 +305,7 @@ app.get('/GetActiveCourseList', isAuth, async function(req, res) {
   try {
     
     connection = await getDBConnection();
-    const query = 'SELECT courses.*, derived_courses.*, person.first_name || \' \' || person.last_name AS teacher_name, COUNT(enrolled.student_id) AS enrolled_count FROM derived_courses JOIN courses ON courses.id = derived_courses.course_id AND derived_courses.is_active = TRUE LEFT JOIN enrolled ON enrolled.course_id = courses.id LEFT JOIN person ON person.id = derived_courses.teacher_id GROUP BY courses.id;';
+    const query = 'SELECT courses.*, derived_courses.*, person.first_name || \' \' || person.last_name AS teacher_name FROM derived_courses JOIN courses ON courses.id = derived_courses.course_id AND derived_courses.is_active = TRUE LEFT JOIN enrolled ON enrolled.course_id = courses.id LEFT JOIN person ON person.id = derived_courses.teacher_id GROUP BY courses.id;';
     const courses = await connection.all(query);
     
     await connection.close();
@@ -345,27 +362,30 @@ app.get('/searchCourses', isAuth, async function(req, res){
 //Retrieve individual course information, preqs and instructor info
 app.post('/getCourseInfo', isAuth, async function(req, res){
 
-  const courseId = req.body.courseId;
+  const derivedId = req.body.derivedId;
 
-  if (!courseId){
+  if (!derivedId){
     res.status(USER_ERROR).send(USER_ERROR_ENDPOINT_MSG);
   }
   else{
     try{
       const connection = await getDBConnection();
+      const courseId = await connection.all('SELECT course_id from derived_courses where id = ?;', [derivedId])
       let query = "SELECT courses.code_type, courses.code_number, derived_courses.* FROM derived_courses JOIN courses ON courses.id = derived_courses.course_id WHERE ? = courses.id;";
-      const courseResult = await connection.all(query, [courseId]);
+      const courseResult = await connection.all(query, [courseId[0]]);
       query = "SELECT course_requirements.pre_req_id, courses.code_type, courses.code_number FROM course_requirements JOIN courses ON course_requirements.course_id = ? WHERE courses.id = course_requirements.pre_req_id;";
       const requirementsResult = await connection.all(query, [courseId]);
       query = "SELECT person.* FROM person JOIN teachers ON person.id = teachers.teacher_id JOIN derived_courses ON teachers.teacher_id = derived_courses.teacher_id WHERE derived_courses.course_id = ?;";
       const instructorResult = await connection.all(query, [courseId]);
-      const output = {courseInfo : courseResult, instructorInfo : instructorResult, requirementsInfo : requirementsResult};
+      const count = await connection.all('SELECT count(*) AS enrolled_count FROM enrolled WHERE course_id = ?;', [derivedId])
+      const output = {courseInfo : courseResult, instructorInfo : instructorResult, requirementsInfo : requirementsResult, enrolled_count: count[0].enrolled_count};
       
       await connection.close();
       
       res.json(output);
     }catch(err){
-      res.type('text');
+      console.log(err)
+      res.type('text');Remember
       res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
     }
   }
@@ -519,7 +539,31 @@ app.get('/getEnrolledCourses', isAuth, async function(req, res){
   try{
     const connection = await getDBConnection();
     //check if the student is enrolled first
-    let query = "SELECT * FROM enrolled JOIN courses ON enrolled.course_id = courses.id JOIN derived_courses ON courses.id = derived_courses.course_id WHERE enrolled.student_id = ?";
+    let query = "SELECT * FROM enrolled JOIN courses ON enrolled.course_id = courses.id JOIN derived_courses ON enrolled.course_id = derived_courses.id WHERE enrolled.student_id = ?";
+    const enrolledCourses = await connection.all(query, [studentId]);
+
+      res.json({"response" : enrolledCourses});
+    
+
+    await connection.close();
+
+  }catch(err){
+    console.log(err)
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
+  }
+
+});
+
+//get completed courses
+app.get('/getCompletedCourses', isAuth, async function(req, res){
+  
+  const studentId = req.username;
+
+  try{
+    const connection = await getDBConnection();
+    //check if the student is enrolled first
+    let query = "SELECT * FROM completed JOIN courses ON completed.derived_course_id = courses.id JOIN derived_courses ON courses.id = derived_courses.course_id WHERE completed.student_id = ?";
     const enrolledCourses = await connection.all(query, [studentId]);
 
       res.json({"response" : enrolledCourses});
@@ -527,6 +571,7 @@ app.get('/getEnrolledCourses', isAuth, async function(req, res){
     await connection.close();
 
   }catch(err){
+    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
@@ -541,7 +586,7 @@ app.get('/getDroppedCourses', isAuth, async function(req, res){
   try{
     const connection = await getDBConnection();
     //check if the student is enrolled first
-    let query = "SELECT * FROM dropped JOIN courses ON dropped.course_id = courses.id JOIN derived_courses ON courses.id = derived_courses.course_id WHERE dropped.student_id = ?";
+    let query = "SELECT * FROM dropped JOIN courses ON dropped.course_id = courses.id JOIN derived_courses ON dropped.course_id = derived_courses.id WHERE dropped.student_id = ?";
     const droppedCourses = await connection.all(query, [studentId]);
 
       res.json({"response" : droppedCourses});
@@ -580,10 +625,11 @@ app.post('/checkStudentEnrolledCourse', isAuth, async function(req, res){
   const studentId = req.username;
   const courseId = req.body.courseId;
 
+
   try{
     const connection = await getDBConnection();
   
-    let query = "SELECT * FROM enrolled WHERE enrolled.student_id = ? AND enrolled.course_id = ?;";
+    let query = "SELECT * FROM enrolled WHERE student_id = ? AND course_id = ?;";
     const enrolledCourse = await connection.all(query, [studentId, courseId]);
 
     if(enrolledCourse.length > 0){ //student is enrolled 
@@ -610,13 +656,14 @@ app.get('/getWaitingClasses', isAuth, async function(req, res){
   try{
     const connection = await getDBConnection();
   
-    let query = "SELECT * FROM waiting WHERE student_id = ?;";
+    let query = "SELECT * FROM waiting JOIN courses ON waiting.derived_course_id = courses.id JOIN derived_courses ON waiting.derived_course_id = derived_courses.id WHERE waiting.student_id = ?";
     const waitingCourses = await connection.all(query, [studentId]);
 
     res.json({"response" : waitingCourses});
     await connection.close();
 
   }catch(err){
+    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }

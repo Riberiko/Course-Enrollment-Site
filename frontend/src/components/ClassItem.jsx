@@ -20,7 +20,7 @@ export default ({data, layout, isWaiting, refresh}) => {
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ 'courseId': data.course_id, 'reason':reason})
+            body: JSON.stringify({ 'courseId': data.course_id, 'derivedId':data.id, 'reason':reason})
         }).then(res => statusCheck(res))
         .then(data => {
             showPopup(data.response + `${data.confirmationNumber ? ' Confirmation : ' + data.confirmationNumber : ''}`)
@@ -39,7 +39,7 @@ export default ({data, layout, isWaiting, refresh}) => {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                'courseId': data.course_id
+                'courseId': data.id
             })
         })
         .then(res => statusCheck(res))
@@ -55,20 +55,23 @@ export default ({data, layout, isWaiting, refresh}) => {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                'courseId': data.course_id
+                'derivedId': data.id
             })
         })
         .then(res => statusCheck(res))
         .then(resData => {
             setMoreInfo(resData)
+            console.log(resData)
         })
         .catch(err => console.log(err))
+
+        console.log(data)
     }, [])
 
     const pre = (moreInfo)?moreInfo.requirementsInfo.map(pre => (pre.code_type+pre.code_number + ' '))[0]:''
 
     return(
-        data ?
+        data && moreInfo ?
         <div className={`courseItem ${!layout?'list':''}`}>
             <p onClick={() => setMore(!more)}>
                 Name: {data.description}<br/>
@@ -76,7 +79,7 @@ export default ({data, layout, isWaiting, refresh}) => {
                 Teacher: {data.teacher_name}<br/>
                 Start: {data.start_time}<br/>
                 End: {data.end_time}<br/>
-                Enrolled Count: {data.enrolled_count}<br />
+                Enrolled Count: {moreInfo.enrolled_count}<br />
                 Capacity : {data.capacity}<br/>
                 {
                     more &&

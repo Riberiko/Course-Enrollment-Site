@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { isAuthF } from '../helper';
+import { isAuthF, statusCheck } from '../helper';
 import { useLocation, useNavigate } from "react-router-dom";
+import { useInfoPopup } from '../messageContext';
 
 const AuthChecker = ({ children }) => {
     const [loading, setLoading] = useState(true);
@@ -9,12 +10,21 @@ const AuthChecker = ({ children }) => {
     const [timerId, setTimerId] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
+    const  {showPopup} = useInfoPopup()
 
     useEffect(() => {
         const checkAuthentication = async () => {
             try {
                 await isAuthF();
                 setAuth(true);
+
+                fetch('http://localhost:8000/getNotifications', {'credentials':'include'})
+                .then(res => statusCheck(res))
+                .then(data => {
+                    showPopup(data.response)
+                })
+                .catch(() => {})
+
             } catch (err) {
                 setAuth(false);
                 setTime(5)
@@ -31,6 +41,7 @@ const AuthChecker = ({ children }) => {
         };
 
         checkAuthentication();
+
         return () => clearInterval(timerId);
     }, [location.pathname]);
 

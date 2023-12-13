@@ -64,7 +64,7 @@ section{
     border-radius: 2px;
     min-width: 300px;
     position: relative;
-    height: 130px;
+    height: min-content;
 }
 
 .courseItem p, .transactionItem p{
