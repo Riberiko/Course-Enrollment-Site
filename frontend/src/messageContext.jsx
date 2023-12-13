@@ -1,3 +1,10 @@
+/*
+  Name: Rob Tai, Michael Lezon, Riberiko Niyomwungere, David Ortega
+  Date: 12.12.23
+  This is react js file for message context component
+*/
+
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 
 
