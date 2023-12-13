@@ -1,3 +1,11 @@
+/*
+  Name: Rob Tai, Michael Lezon, Riberiko Niyomwungere, David Ortega
+  Date: 12.12.23
+  This is react js file for dashboard
+*/
+
+
+
 import { Routes, Route, Link, useNavigate } from "react-router-dom"
 import Private from "./Private"
 import AccountInfo from "./AccountInfo"
