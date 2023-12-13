@@ -1,3 +1,11 @@
+/*
+  Name: Rob Tai, Michael Lezon, Riberiko Niyomwungere, David Ortega
+  Date: 12.12.23
+  This is react js file for log in page
+*/
+
+
+
 import React, { useEffect, useState } from 'react';
 import Form from 'react-bootstrap/Form';
 import { Container, Row, Col, Image } from "react-bootstrap";
