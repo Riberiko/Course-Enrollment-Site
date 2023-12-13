@@ -1,3 +1,10 @@
+/*
+  Name: Rob Tai, Michael Lezon, Riberiko Niyomwungere, David Ortega
+  Date: 12.12.23
+  This is react js file for registeration page
+*/
+
+
 import { useEffect, useState } from "react";
 import { statusCheck } from "../helper";
 import CourseSearch from "./CourseSearch";
