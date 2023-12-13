@@ -1,3 +1,9 @@
+/*
+  Name: Rob Tai, Michael Lezon, Riberiko Niyomwungere, David Ortega
+  Date: 12.12.23
+  This is the sql commands to built and populate the sql database
+*/
+
 -- State
 INSERT INTO state (code, name) VALUES
 ('WA', 'Washington'),
