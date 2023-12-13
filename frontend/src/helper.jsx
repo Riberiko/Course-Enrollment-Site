@@ -1,3 +1,10 @@
+/*
+  Name: Rob Tai, Michael Lezon, Riberiko Niyomwungere, David Ortega
+  Date: 12.12.23
+  This is react js file for utility functions
+*/
+
+
 async function statusCheck(response, errorMessage = 'from backend')
 {
     const contentType = response.headers.get('Content-Type');
