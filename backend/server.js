@@ -247,8 +247,7 @@ app.post('/addDroppedCourse', isAuth, async function(req, res){
         enrolledConfirmationNumber = await addToHistory(connection, waitingStudentId, courseId, ENROLLED);
 
         //add a notification so the waitlisted student is notified when they log back in
-        console.log('wtf')
-        query = "INSERT INTO notifications (person_id, notification) VALUES(?,'?');";
+        query = "INSERT INTO notifications (person_id, notification) VALUES(?,?);";
         await connection.all(query, [waitingStudentId, AUTO_ENROLLED]);
       }
       res.json({
