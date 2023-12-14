@@ -33,7 +33,7 @@ export default () => {
 
         setCategories([...new Set(responseData.map(item => item.code_type))])
       } catch (err) {
-        console.log(err);
+        //do nothing during error
       }
     };
 

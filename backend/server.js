@@ -83,7 +83,6 @@ app.get('/getNotifications', isAuth, async function(req, res){
 
     if (notifications.length > 0){
       const response = notifications.map(obj => obj.notification+'<br/>').join('')
-      console.log(notifications, response)
       res.json({"response" : `<p>${response}</p>`});
     }
     else{
@@ -128,13 +127,11 @@ app.post('/addEnrolledCourse', isAuth, async function(req, res){
         const completedCourse = await connection.all(query, [studentId]);
 
 
-        console.log(completedCourse)
         for (let i = preReq.length - 1; i >= 0; i--) {
           if (completedCourse.some(completed => completed.course_id === preReq[i].course_id)) {
             preReq.splice(i, 1);
           }
         }
-        console.log(preReq)
       }
 
       //check if the course if full
@@ -143,7 +140,6 @@ app.post('/addEnrolledCourse', isAuth, async function(req, res){
 
       query = "SELECT capacity FROM derived_courses WHERE id = ?;";
       const courseCapacity = await connection.all(query, [derivedId]);
-      console.log(courseCapacity)
       const courseFull = enrolledCount.length >= courseCapacity[CAPACITY_IDX].capacity;
       
       if(preReq.length)
@@ -191,7 +187,6 @@ app.post('/addEnrolledCourse', isAuth, async function(req, res){
     await connection.close();
 
   }catch(err){
-    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
@@ -270,7 +265,6 @@ app.post('/addDroppedCourse', isAuth, async function(req, res){
     await connection.close();
 
   }catch(err){
-    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
@@ -389,7 +383,6 @@ app.post('/getCourseInfo', isAuth, async function(req, res){
       
       res.json(output);
     }catch(err){
-      console.log(err)
       res.type('text');Remember
       res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
     }
@@ -553,7 +546,6 @@ app.get('/getEnrolledCourses', isAuth, async function(req, res){
     await connection.close();
 
   }catch(err){
-    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
@@ -576,7 +568,6 @@ app.get('/getCompletedCourses', isAuth, async function(req, res){
     await connection.close();
 
   }catch(err){
-    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }
@@ -668,7 +659,6 @@ app.get('/getWaitingClasses', isAuth, async function(req, res){
     await connection.close();
 
   }catch(err){
-    console.log(err)
     res.type('text');
     res.status(SERVER_ERROR).send(SERVER_ERROR_MSG + DBNAME_MAIN);
   }

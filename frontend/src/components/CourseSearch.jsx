@@ -17,7 +17,6 @@ const SearchBar = ({ items, categories, setList, isTransaction, layout, setLayou
     // Implement your search logic based on the query, filter, and orderBy options
     const filteredAndOrderedItems = items
       .filter((item) => {
-        console.log(item)
         if (filter === "all") {
           return (!isTransaction) ? item.description.includes(query) : item.confirmation_number.includes(query);
         } else {

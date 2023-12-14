@@ -25,7 +25,7 @@ export default ({layout}) => {
         setData(data)
         setFilteredData(data)
       })
-      .catch(err => console.log(err.message))
+      .catch(() => {})
 
       fetch('http://localhost:8000/GetEntireCourseList',
       {
@@ -35,7 +35,7 @@ export default ({layout}) => {
         setData(data)
         setEntireCoursesList(data)
       })
-      .catch(err => console.log(err.message))
+      .catch(() => {})
     },[])
 
     function getName(entireCourseList, lookfor)

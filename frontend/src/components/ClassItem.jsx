@@ -53,7 +53,7 @@ export default ({data, layout, isWaiting, refresh}) => {
         .then(resData => {
             setRegistered(resData.response)
         })
-        .catch(err => console.log(err))
+        .catch(() => {})
         
         fetch('http://localhost:8000/getCourseInfo', {
             method: 'post',
@@ -68,11 +68,9 @@ export default ({data, layout, isWaiting, refresh}) => {
         .then(res => statusCheck(res))
         .then(resData => {
             setMoreInfo(resData)
-            console.log(resData)
         })
-        .catch(err => console.log(err))
+        .catch(() => {})
 
-        console.log(data)
     }, [])
 
     const pre = (moreInfo)?moreInfo.requirementsInfo.map(pre => (pre.code_type+pre.code_number + ' '))[0]:''
