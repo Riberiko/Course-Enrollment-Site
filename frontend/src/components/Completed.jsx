@@ -12,7 +12,7 @@ export default () => {
       .then(data => {
         setData(data.response)
       })
-      .catch(err => console.log(err.message))
+      .catch(() => {})
     },[])
 
     return (

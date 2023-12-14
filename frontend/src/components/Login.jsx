@@ -43,12 +43,8 @@ function handleLogin(user_type, navigate, rememberMe){
             localStorage.clear()
         }
         navigate('/account')
-        // Handle successful login, e.g., storing the token, redirecting, etc.
     })
-    .catch((err) => {
-        // Handle login failed, show user feedback
-        console.log(err)
-    });
+    .catch(() => {});
 }
 
 

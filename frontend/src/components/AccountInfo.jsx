@@ -30,22 +30,22 @@ export default () => {
         })
         .then(res => statusCheck(res))
         .then(data => setData(data[0]))
-        .catch(err => console.log(err))
+        .catch(() => {})
 
         fetch('http://localhost:8000/getEnrolledCourses', {'credentials' : 'include'})
         .then(res => statusCheck(res))
         .then(data => setEnrolled(data.response))
-        .catch(err => console.log(err))
+        .catch(() => {})
 
         fetch('http://localhost:8000/getDroppedCourses', {'credentials' : 'include'})
         .then(res => statusCheck(res))
         .then(data => setDropped(data.response))
-        .catch(err => console.log(err))
+        .catch(() => {})
 
         fetch('http://localhost:8000/getWaitingClasses', {'credentials' : 'include'})
         .then(res => statusCheck(res))
         .then(data => setWaiting(data.response))
-        .catch(err => console.log(err))
+        .catch(() => {})
     }, [refresh])
 
     return(
